@@ -1,0 +1,15 @@
+2003-06-19  Ahmon Dancy  <dancy@dancy>
+
+        * subs.cl:  Process all To: and Cc: headers found when computing
+	the recipients list.
+
+2003-06-16  Ahmon Dancy  <dancy@dancy>
+
+	* Makefile:  Added 'install' rule.
+
+	* incfilter.cl:  Pass unrecognized args over to inc.
+
+	* mailstatus.cl:  Failed to reset other-inbox counters when spool
+	changed.  Fixed.
+	
+

@@ -173,11 +173,19 @@
 	(values headers 
 		bodylines
 		froms
-		;; get-addr-list returns nil if it gets called w/
-		;; nil
-		(append (get-addr-list (get-header "To" headers))
-			(get-addr-list (get-header "Cc" headers))))))))
-      
+		(get-header-recips headers))))))
+
+
+(defun get-header-recips (headers)
+  (let (res)
+    (dolist (header headers)
+      (if (or (equalp (car header) "To")
+	      (equalp (car header) "Cc"))
+	  (setf res (nconc 
+		     res
+		     (get-addr-list (cdr header))))))
+    res))
+
 ;; In all of these functions, 'addr' is an email address
 ;; found in the message.  'check-against' is the address
 ;; provided by the mailfilter user.
