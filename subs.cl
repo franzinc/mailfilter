@@ -42,16 +42,18 @@
 	      (one-of-addrs-is-in-checklist-p (msginfo-tos minfo)
 					      checklist
 					      :domain domain-regexp))
-	    (subject-match (regexp)
-	      (match-regexp regexp (msginfo-subject minfo)))
-	    (class-match (regexp)
-	      (match-regexp regexp (msginfo-class minfo)))
 	    (add-header (name value)
 	      (setf (msginfo-headers minfo)
 		(nconc (msginfo-headers minfo) 
 		       (list (cons name value))))))
-       (block nil
-	 ,@body))))
+       ;; putting these into a macrolet allows the the regexps to be
+       ;; compiled at the time the .mailfilter.cl is compiled.
+       (macrolet
+	   ((subject-match (regexp)
+	      `(match-regexp ,regexp (msginfo-subject minfo)))
+	    (class-match (regexp)
+	      `(match-regexp ,regexp (msginfo-class minfo))))
+	 (block nil ,@body)))))
      
 (defun get-mhpath (homedir)
   (let (line)
@@ -213,36 +215,37 @@
 ;; below, "exact" means full address regexp match, rather than
 ;; just matching on a piece of the address.
 
-(defmacro match (addr check-against)
-  `(match-regexp (concatenate 'string "^" ,check-against "$") ,addr))
+(defmacro match (addr check-against &key case-fold)
+  `(match-regexp (concatenate 'string "^" ,check-against "$") ,addr
+		 :case-fold ,case-fold))
 
 (defun address-matches-p (addr check-against &key domain)
   (let ((atpos-addr (position #\@ addr))
 	(atpos-check (position #\@ check-against)))
     (if* domain
-       then
-	    (cond 
+       then (cond 
 	     (atpos-check
 	      (error "~A has a domain part.  Expected just a user part" 
 		     check-against))
 	     ((null atpos-addr)
 	      ;; addr is unqualified, so do exact matching
-	      (match addr check-against))
+	      (match addr check-against :case-fold t))
 	     (t
 	      ;; addr is qualified, so we qualify check-against and
 	      ;; do an exact match
-	      (match addr (concatenate 'string check-against "@" domain))))
-       else
-	    (cond
+	      (match addr (concatenate 'string check-against "@" domain)
+		     :case-fold t)))
+       else (cond
 	     ;; do exact match if check-against is qualified.. 
 	     ;;  or if addr is unqualified (and, implicitly, check-against
 	     ;;   is unqualified)
 	     ((or atpos-check (null atpos-addr))
-	      (match addr check-against))
+	      (match addr check-against :case-fold t))
 	     (t
 	      ;; check-against is unqualified but addr isn't.. just check
 	      ;; the userpart
-	      (match (subseq addr 0 atpos-addr) check-against))))))
+	      (match (subseq addr 0 atpos-addr) check-against
+		     :case-fold t))))))
 	     
 
 (defun one-of-addrs-is-in-checklist-p (addrs check-list &key domain)

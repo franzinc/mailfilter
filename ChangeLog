@@ -1,3 +1,12 @@
+2004-09-28  Kevin Layer  <layer@gemini>
+
+	* Makefile: `install': save current version to ``.old''
+	* subs.cl:
+	- minor cleanup to defclassification (use macrolet for
+	  subject-match and class-match)
+	- add case-fold keyword to `match'
+	- ignore case in address-matches-p
+
 2004-06-12  Ahmon Dancy  <dancy@dancy>
 
 	* subs.cl:  Added bh-appended-p function for handler's use.

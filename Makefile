@@ -20,6 +20,8 @@ folderfilter/folderfilter: $(libfiles) folderfilter.cl
 
 install: all
 	mkdir -p $(installdir)
+	rm -fr $(installsubdir).old
+	mv $(installsubdir) $(installsubdir).old
 	mkdir -p $(installsubdir)
 	-rm -fr $(installsubdir)/mailstatus 
 	cp -p mailstatus/* $(installsubdir)
