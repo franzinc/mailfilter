@@ -1,5 +1,8 @@
 2003-06-19  Ahmon Dancy  <dancy@dancy>
 
+	* incfilter.cl:  truncate spool file even if there are no messages
+	inc'd into +inbox.
+
         * subs.cl:  Process all To: and Cc: headers found when computing
 	the recipients list.
 
