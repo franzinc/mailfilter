@@ -15,7 +15,7 @@
 ;; used by mailstatus
 (defparameter *mailstatus-inbox-folder-order* nil)
 ;; used by incfilter.   
-(defparameter *logfilename* "incfilter.log") ;; relative to home dir
+(defparameter *logfilename* "~/incfilter.log") 
 
 (defstruct msginfo
   num

@@ -13,7 +13,6 @@
 	 (truncate :unset)
 	 (prgname (pop args))
 	 (*incorporating-mail* t)
-	 logfilename
 	 inc-args
 	 debug)
     (declare (ignore prgname))
@@ -23,8 +22,6 @@
 	(error "Environment variable HOME is not set"))
     (if (null spoolfile)
 	(error "Couldn't determine your spool filename"))
-    
-    (setf logfilename (format nil "~A/~A" home *logfilename*))
     
     (load-user-config home)
     
@@ -57,7 +54,7 @@
     (if (eq truncate :unset)
 	(setf truncate t))
 
-    (with-open-file (logfile logfilename
+    (with-open-file (logfile *logfilename*
 		     :direction :output
 		     :if-exists :always-append
 		     :if-does-not-exist :always-append)

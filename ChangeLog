@@ -1,3 +1,8 @@
+2003-10-01  Ahmon Dancy  <dancy@dancy>
+
+	* incfilter.cl/sub.slc:  Make *logfilename* really work like a
+	configurable parameter.
+
 2003-09-30  Ahmon Dancy  <dancy@dancy>
 
 	* incfilter.cl:  Writes to $HOME/incfilter.log for auditing.
