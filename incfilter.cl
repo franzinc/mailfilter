@@ -54,7 +54,7 @@
     (if (eq truncate :unset)
 	(setf truncate t))
 
-    (with-open-file (logfile *logfilename*
+    (with-open-file (logfile (if debug "/dev/null" *logfilename*)
 		     :direction :output
 		     :if-exists :always-append
 		     :if-does-not-exist :always-append)

@@ -1,3 +1,6 @@
+2004-05-28  Ahmon Dancy  <dancy@dancy>
+	* incfilter.cl: Don't write to *logfilename* when in debug mode.
+	
 2003-10-01  Ahmon Dancy  <dancy@dancy>
 
 	* subs.cl: dispatched-to-p: uriencode reportid and user strings
