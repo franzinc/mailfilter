@@ -94,10 +94,11 @@
 			(error "inc ~A exited w/ non-zero status" folder))))))
 
 	    (when (not (member "+inbox" folders :test #'string=))
-	      (if truncate
-		  (os-truncate f 0))
-	      (write-line "inc: no mail to incorporate" excl::*stderr*)
-	      (finish-output excl::*stderr*) ;; yeesh
+	      (when (not debug)
+		(if truncate
+		    (os-truncate f 0))
+		(write-line "inc: no mail to incorporate" excl::*stderr*)
+		(finish-output excl::*stderr*)) ;; yeesh
 	      (return-from main))
 
 	    ;; having -truncate avoids a message about
@@ -110,7 +111,7 @@
 	      
 	      (when (not debug)
 		(if (/= 0 (run-shell-command cmdvec :wait t))
-		    (error "inc +folder exited w/ non-zero status"))
+		    (error "inc +inbox exited w/ non-zero status"))
 		
 		(if* (not truncate)
 		   then

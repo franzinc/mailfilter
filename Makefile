@@ -28,6 +28,9 @@ install: all
 	cd $(installdir) && ln -sf $(installsubdir)/incfilter
 	cd $(installdir) && ln -sf $(installsubdir)/folderfilter
 
+install-incfilter: incfilter/incfilter
+	cp -p incfilter/* $(installsubdir)
+
 uninstall:
 	rm -fr $installsubdir
 

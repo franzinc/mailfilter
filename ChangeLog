@@ -1,3 +1,7 @@
+2003-07-08  Ahmon Dancy  <dancy@dancy>
+
+	* incfilter.cl:  Fixed undesired spool truncation in debug mode.
+
 2003-06-24  Ahmon Dancy  <dancy@dancy>
 
 	* subs.cl:  Added just-body keyword arg to copy-message-to-stream
