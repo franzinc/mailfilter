@@ -1,3 +1,7 @@
+2003-09-30  Ahmon Dancy  <dancy@dancy>
+
+	* incfilter.cl:  Writes to $HOME/incfilter.log for auditing.
+
 2003-07-21  Ahmon Dancy  <dancy@dancy>
 
 	* Updated install rule in makefile

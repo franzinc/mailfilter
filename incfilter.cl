@@ -2,7 +2,8 @@
 
 (eval-when (compile load eval)
   (require :osi)
-  (use-package :excl.osi))
+  (use-package :excl.osi)
+  (require :locale))
 
 (defun main (&rest args)
   (let* ((user (getenv "USER"))
@@ -12,6 +13,7 @@
 	 (truncate :unset)
 	 (prgname (pop args))
 	 (*incorporating-mail* t)
+	 logfilename
 	 inc-args
 	 debug)
     (declare (ignore prgname))
@@ -21,6 +23,8 @@
 	(error "Environment variable HOME is not set"))
     (if (null spoolfile)
 	(error "Couldn't determine your spool filename"))
+    
+    (setf logfilename (format nil "~A/~A" home *logfilename*))
     
     (load-user-config home)
     
@@ -52,72 +56,80 @@
     
     (if (eq truncate :unset)
 	(setf truncate t))
-    
-    (with-spool-file (f spoolfile :dotlock dotlock)
-      (when (eq f :no-spool)
-	(write-line "inc: no mail to incorporate" excl::*stderr*)
-	(finish-output excl::*stderr*) ;; yeesh
-	(return-from main))
 
-      (let ((tmpdir (make-temp-dir-name home)))
-	(with-tmp-dir (tmpdir)
-	  (with-each-message (f folder minfo user)
-	    (when debug
-	      (format t "~D " (msginfo-num minfo))
-	      (let ((s (get-header "Subject" (msginfo-headers minfo))))
-		(if s
-		    (format t "(~A) " s)))
-	      (format t "--> ~A~%" folder))
-	    
-	    (let ((tmpfile (concatenate 'string tmpdir "/" folder)))
-	      (with-open-file (out tmpfile
-			       :direction :output
-			       :if-does-not-exist :create
-			       :if-exists :append)
-		(copy-message-to-stream f out (msginfo-headers minfo) 
-					:save-pos nil))))
-	  
-	  (if (and debug (> debug 1))
-	      (break "You may now inspect ~A%" tmpdir))
-	  
-	  (let ((folders (get-folders-used-list tmpdir)))
-	    (dolist (folder folders)
-	      (when (not (string= folder "+inbox"))
-		(let ((cmdvec 
-		       (make-inc-cmdvec folder tmpdir "-silent" inc-args)))
+    (with-open-file (logfile logfilename
+		     :direction :output
+		     :if-exists :always-append
+		     :if-does-not-exist :always-append)
+      (with-spool-file (f spoolfile :dotlock dotlock)
+	(when (eq f :no-spool)
+	  (write-line "inc: no mail to incorporate" excl::*stderr*)
+	  (finish-output excl::*stderr*) ;; yeesh
+	  (return-from main))
 
-		  (if debug
-		      (debugcmd cmdvec))
-		  
-		  (when (not debug)
-		    (if (/= 0 (run-shell-command cmdvec :wait t))
-			(error "inc ~A exited w/ non-zero status" folder))))))
-
-	    (when (not (member "+inbox" folders :test #'string=))
-	      (when (not debug)
-		(if truncate
-		    (os-truncate f 0))
-		(write-line "inc: no mail to incorporate" excl::*stderr*)
-		(finish-output excl::*stderr*)) ;; yeesh
-	      (return-from main))
-
-	    ;; having -truncate avoids a message about
-	    ;; the file not being zero'd.
-	    (let ((cmdvec 
-		   (make-inc-cmdvec "+inbox" tmpdir "-truncate" inc-args)))
-
-	      (if debug
-		  (debugcmd cmdvec))
+	(let ((tmpdir (make-temp-dir-name home)))
+	  (with-tmp-dir (tmpdir)
+	    (with-each-message (f folder minfo user)
+	      (when debug
+		(format t "~D " (msginfo-num minfo))
+		(let ((s (get-header "Subject" (msginfo-headers minfo))))
+		  (if s
+		      (format t "(~A) " s)))
+		(format t "--> ~A~%" folder))
 	      
-	      (when (not debug)
-		(if (/= 0 (run-shell-command cmdvec :wait t))
-		    (error "inc +inbox exited w/ non-zero status"))
+	      (let ((tmpfile (concatenate 'string tmpdir "/" folder)))
+		(with-open-file (out tmpfile
+				 :direction :output
+				 :if-does-not-exist :create
+				 :if-exists :append)
+		  (copy-message-to-stream f out (msginfo-headers minfo) 
+					  :save-pos nil)))
+	      
+	      (logentry logfile minfo folder))
+	    
+	    ;; Outside of with-each message.
+	  
+	    (if (and debug (> debug 1))
+		(break "You may now inspect ~A%" tmpdir))
+	  
+	    (let ((folders (get-folders-used-list tmpdir)))
+	      (dolist (folder folders)
+		(when (not (string= folder "+inbox"))
+		  (let ((cmdvec 
+			 (make-inc-cmdvec folder tmpdir "-silent" inc-args)))
+
+		    (if debug
+			(debugcmd cmdvec))
+		  
+		    (when (not debug)
+		      (if (/= 0 (run-shell-command cmdvec :wait t))
+			  (error "inc ~A exited w/ non-zero status" folder))))))
+
+	      (when (not (member "+inbox" folders :test #'string=))
+		(when (not debug)
+		  (if truncate
+		      (os-truncate f 0))
+		  (write-line "inc: no mail to incorporate" excl::*stderr*)
+		  (finish-output excl::*stderr*)) ;; yeesh
+		(return-from main))
+
+	      ;; having -truncate avoids a message about
+	      ;; the file not being zero'd.
+	      (let ((cmdvec 
+		     (make-inc-cmdvec "+inbox" tmpdir "-truncate" inc-args)))
+
+		(if debug
+		    (debugcmd cmdvec))
+	      
+		(when (not debug)
+		  (if (/= 0 (run-shell-command cmdvec :wait t))
+		      (error "inc +inbox exited w/ non-zero status"))
 		
-		(if* (not truncate)
-		   then
-			(format t "~A not zero'd~%" spoolfile)
-		   else
-			(os-truncate f 0))))))))))
+		  (if* (not truncate)
+		     then
+			  (format t "~A not zero'd~%" spoolfile)
+		     else
+			  (os-truncate f 0)))))))))))
 		
 
 (defun make-temp-dir-name (homedir)
@@ -143,3 +155,11 @@
 	  mode)
     inc-args)
    'vector))
+
+(defun logentry (stream minfo folder)
+  (format stream "~A:~A:~A:~A~%"
+	  (ctime) 
+	  (list-to-delimited-string (msginfo-froms minfo) #\,)
+	  (get-header "Message-Id" (msginfo-headers minfo) :null-string t)
+	  folder)
+  (finish-output stream))
