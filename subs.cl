@@ -67,7 +67,8 @@
 
 ;; By default, leaves the file position unchanged.. this is so
 ;; people can safely use this in their .mailfilter.cl files.
-(defun copy-message-to-stream (source dest headers &key (save-pos t))
+(defun copy-message-to-stream (source dest headers &key (save-pos t)
+							just-body)
   (let (line)
     (if save-pos
 	(push-spool-stream-mark source))
@@ -75,7 +76,7 @@
     ;; skips the headers (and the blank line that follows them)
     (scan-message-headers source 0)
     
-    (when dest
+    (when (and dest (not just-body))
       ;; Write out replacement headers.
       (dolist (h headers)
 	(if (eq (cdr h) :from-leader)

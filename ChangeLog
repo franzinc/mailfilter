@@ -1,3 +1,8 @@
+2003-06-24  Ahmon Dancy  <dancy@dancy>
+
+	* subs.cl:  Added just-body keyword arg to copy-message-to-stream
+	to skip the headers.
+
 2003-06-20  Ahmon Dancy  <dancy@dancy>
 
 	* mailstatus.cl: reset 'new' counts for other inboxes if spool is
