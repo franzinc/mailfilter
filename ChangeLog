@@ -1,3 +1,12 @@
+2004-11-30  Kevin Layer  <layer@gemini>
+
+	* Makefile: add cvs id
+	* folderfilter.cl: use new regexp
+	* incfilter.cl: -d to give backtrace if an error occurs
+	* load.cl: load :shell and :regexp2 modules
+	* mailstatus.cl: backtrace on error (if -d); use new regexp
+	* subs.cl: use new regexp
+
 2004-09-28  Kevin Layer  <layer@gemini>
 
 	* Makefile: `install': save current version to ``.old''

@@ -11,7 +11,7 @@
 (defparameter *body-lines-to-read* 0)
 (defparameter *track-dispatches* nil)
 ;; inbox-regexp is used in mailstatus
-(defparameter *inbox-regexp* "^inbox-\\(.*\\)") 
+(defparameter *inbox-regexp* "^inbox-(.*)") 
 ;; used by mailstatus
 (defparameter *mailstatus-inbox-folder-order* nil)
 ;; used by incfilter.   
@@ -50,9 +50,11 @@
        ;; compiled at the time the .mailfilter.cl is compiled.
        (macrolet
 	   ((subject-match (regexp)
-	      `(match-regexp ,regexp (msginfo-subject minfo)))
+	      `(and (msginfo-subject minfo)
+		    (match-re ,regexp (msginfo-subject minfo))))
 	    (class-match (regexp)
-	      `(match-regexp ,regexp (msginfo-class minfo))))
+	      `(and (msginfo-class minfo)
+		    (match-re ,regexp (msginfo-class minfo)))))
 	 (block nil ,@body)))))
      
 (defun get-mhpath (homedir)
@@ -120,7 +122,7 @@
        ((string= line "") ;; end of headers
 	(return)) ;; break from loop
        ;; Check for message that begins with "From "
-       ((and firstline (=~ "^From\\b+\\(\\B+\\)" line))
+       ((and firstline (=~ "^From\\s+(\\S+)" line))
 	(setf envelope-sender $1)
 	;; hack since we need the "From " leader when writing the
 	;; message out to another file
@@ -270,6 +272,8 @@
 	 (r4 (concatenate 'string nonwordchar word-regexp nonwordchar)))
     `(block nil
        (let ((,stringvar ,string))
+	 (if (not (stringp ,string))
+	     (return nil))
 	 (if (=~ ,r1 ,stringvar)
 	     (return t))
 	 (if (=~ ,r2 ,stringvar)
@@ -285,11 +289,11 @@
     (let ((thing (or (get-header "Bh-Id" headers)
 		     (get-header "Subject" headers))))
       (when thing
-	(if (=~word "\\(spr[0-9]+\\)" thing)
+	(if (=~word "(spr[0-9]+)" thing)
 	    (return $1))
-	(if (=~word "\\(bug[0-9]+\\)" thing)
+	(if (=~word "(bug[0-9]+)" thing)
 	    (return $1))
-	(if (=~word "\\(rfe[0-9]+\\)" thing)
+	(if (=~word "(rfe[0-9]+)" thing)
 	    (return $1))))))
 
   
@@ -394,4 +398,5 @@
      
      (and (one-of-addrs-is-in-checklist-p (msginfo-froms minfo) "handler")
 	  (one-of-addrs-is-in-checklist-p (msginfo-tos minfo) user)
+	  (msginfo-subject minfo)
 	  (=~ "^sprs\\.\\.\\." (msginfo-subject minfo))))))

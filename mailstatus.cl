@@ -1,3 +1,5 @@
+;; $Id: mailstatus.cl,v 1.4 2004/11/30 21:31:53 layer Exp $
+
 (in-package :user)
 
 (defun main (&rest args)
@@ -39,41 +41,63 @@
     ;; bleh
     (setf *default-pathname-defaults* (pathname (chdir (get-mhpath home))))
 
-    (loop ;; interval loop
-      (with-output-to-string (output)
-	(if show-time
-	    (output-time output))
+    (flet
+	((doit ()
+	   (loop ;; interval loop
+	     (with-output-to-string (output)
+	       (when show-time (output-time output))
 	
-	;; the 'boxes' hash table holds entries in the following form:
-	;; +folder ==> (old new modification-time)
-	;; (old is not used for +inbox)
+	       ;; the 'boxes' hash table holds entries in the following form:
+	       ;; +folder ==> (old new modification-time)
+	       ;; (old is not used for +inbox)
 	
-	(get-main-inbox-information spoolfile user boxes)
+	       (get-main-inbox-information spoolfile user boxes)
 	
-	(let ((ninbox (second (gethash "+inbox" boxes))))
-	  (if (> ninbox 0)
-	      (format output " ~D+" ninbox)))
+	       (let ((ninbox (second (gethash "+inbox" boxes))))
+		 (if (> ninbox 0)
+		     (format output " ~D+" ninbox)))
 	
-	;; inbox ==> (shortname longname fullname)
-	(dolist (inbox (make-list-of-inboxes))
-	  (multiple-value-bind (old new)
-	      (get-other-inbox-information inbox boxes)
-	    (let ((shortname (first inbox)))
-	      (cond 
-	       ((and (> new 0) (> old 0))
-		(format output " ~D>~A:~D" new shortname old))
-	       ((> new 0)
-		(format output " ~D>~A" new shortname))
-	       ((> old 0)
-		(format output " ~A:~D" shortname old))))))
+	       ;; inbox ==> (shortname longname fullname)
+	       (dolist (inbox (make-list-of-inboxes))
+		 (multiple-value-bind (old new)
+		     (get-other-inbox-information inbox boxes)
+		   (let ((shortname (first inbox)))
+		     (cond 
+		      ((and (> new 0) (> old 0))
+		       (format output " ~D>~A:~D" new shortname old))
+		      ((> new 0)
+		       (format output " ~D>~A" new shortname))
+		      ((> old 0)
+		       (format output " ~A:~D" shortname old))))))
 	
-	(write-string (get-output-stream-string output))
-	(finish-output))
+	       (write-string (get-output-stream-string output))
+	       (finish-output))
 
-      (if once
-	  (return))
+	     (if once
+		 (return))
       
-      (sleep interval))))
+	     (sleep interval))))
+      (if* debug
+	 then (handler-bind
+		  ((error
+		    (lambda (e)
+		      (with-standard-io-syntax
+			(let ((*print-readably* nil)
+			      (*print-miser-width* 40)
+			      (*print-pretty* t)
+			      (tpl:*zoom-print-circle* t)
+			      (tpl:*zoom-print-level* nil)
+			      (tpl:*zoom-print-length* nil))
+			  (ignore-errors ;prevent recursion
+			   (format *terminal-io* "~
+~@<An unhandled error condition has been signalled:~3I ~a~I~:@>~%~%"
+				   e))
+			  (ignore-errors ;prevent recursion
+			   (tpl:do-command "zoom"
+			     :from-read-eval-print-loop nil
+			     :count t :all t)))))))
+		(doit))
+	 else (doit)))))
 
 (defun ensure-box (box boxes)
   (if (null (gethash box boxes))
@@ -95,7 +119,7 @@
     (dolist (path (directory "."))
       (let ((longname (enough-namestring path)))
 	(multiple-value-bind (found whole shortname)
-	    (match-regexp *inbox-regexp* longname)
+	    (match-re *inbox-regexp* longname)
 	  (declare (ignore whole))
 	  (when found
 	    (push (list shortname longname 
@@ -163,10 +187,9 @@
 	  (file-write-date longname))
 	
 	(setf (first (gethash fullname boxes))
-	  (count-if 
-	   #'(lambda (p)
-	       (match-regexp "/[0-9]+$" (enough-namestring p)))
-	   (directory (concatenate 'string longname "/")))))
+	  (count-if (lambda (p)
+		      (match-re "/[0-9]+$" (enough-namestring p)))
+		    (directory (concatenate 'string longname "/")))))
       
       (setf old (first (gethash fullname boxes))))
     (values old new)))

@@ -1,4 +1,6 @@
-lisp=/fi/cl/6.2/bin/$(shell /fi/cl/6.2/acl/osname.sh)/mlisp
+# $Id: Makefile,v 1.8 2004/11/30 21:31:53 layer Exp $
+
+lisp=/fi/cl/7.0/bin/$(shell /fi/cl/7.0/acl/osname.sh)/mlisp
 installdir=/usr/fi
 installsubdir=$(installdir)/mailfilter
 

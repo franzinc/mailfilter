@@ -18,7 +18,7 @@
      prg
      (append
       (mapcar #'(lambda (f) (concatenate 'string f ".fasl")) *file-list*)
-      (list :trace))
+      (list :regexp2 :shell :trace))
      :include-compiler t
      :runtime :dynamic)))
 

@@ -22,7 +22,7 @@
        ((string= (first args) "-d")
 	(setf debug t)
 	(pop args))
-       ((match-regexp "^\\+" (first args))
+       ((match-re "^\\+" (first args))
 	(if folder
 	    (error "~A: Already specified a folder: ~A" prgname folder))
 	(setf folder (pop args)))
@@ -36,7 +36,7 @@
 	  (moves (make-hash-table :test #'equal))
 	  msgnum)
       (dolist (path (directory folderdir))
-	(when (=~ "^\\([0-9]+\\)$" (enough-namestring path folderdir))
+	(when (=~ "^([0-9]+)$" (enough-namestring path folderdir))
 	  (setf msgnum $1)
 	  
 	  (with-spool-file (f path)
