@@ -27,7 +27,9 @@
     (while args
       (cond 
        ((string= (first args) "-d")
-	(setf debug t)
+	(if debug
+	    (incf debug)
+	  (setf debug 1))
 	(pop args))
        ((string= (first args) "-notruncate")
 	(setf truncate nil)
@@ -75,7 +77,8 @@
 		(copy-message-to-stream f out (msginfo-headers minfo) 
 					:save-pos nil))))
 	  
-	  ;;(break "You may now inspect ~A%" tmpdir)
+	  (if (> debug 1)
+	      (break "You may now inspect ~A%" tmpdir))
 	  
 	  (let ((folders (get-folders-used-list tmpdir)))
 	    (dolist (folder folders)
