@@ -77,7 +77,16 @@
 
 (defun ensure-box (box boxes)
   (if (null (gethash box boxes))
-      (setf (gethash box boxes) (list 0 0 0))))
+      (zero-box box boxes)))
+
+(defun zero-box (box boxes)
+  (setf (gethash box boxes) (list 0 0 0)))
+
+(defun reset-new-count-for-boxes (boxes)
+  (maphash #'(lambda (key value)
+	       (declare (ignore key))
+	       (setf (second value) 0))
+	   boxes))
 
 ;; make a list of
 ;;  (shortname longname fullname) lists
@@ -115,16 +124,19 @@
     (format stream " ~D:~2,'0d" hour min)))
 
 ;; Gets the new count for other inboxes as a side effect
+
 (defun get-main-inbox-information (spoolfile user boxes)
   (ensure-box "+inbox" boxes)
   
   (with-spool-file (f spoolfile :dotlock t)
     (when (eq f :no-spool)
-      (setf (gethash "+inbox" boxes) (list 0 0 0)))
+      (zero-box "+inbox" boxes))
     
     (when (and (streamp f) 
 	       (> (file-write-date f)
 		  (third (gethash "+inbox" boxes))))
+      (reset-new-count-for-boxes boxes)
+      
       (setf (third (gethash "+inbox" boxes)) (file-write-date f))
       
       (with-each-message (f box minfo user)

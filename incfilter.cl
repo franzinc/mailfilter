@@ -12,6 +12,7 @@
 	 (truncate :unset)
 	 (prgname (pop args))
 	 (*incorporating-mail* t)
+	 inc-args
 	 debug)
     (declare (ignore prgname))
     (if (null user)
@@ -43,15 +44,12 @@
 	(if (eq truncate :unset)
 	    (setf truncate nil)))
        (t
-	(error "incfilter: Don't know how to cope with option ~A" 
-	       (first args)))))
+	(push (pop args) inc-args))))
+    
+    (setf inc-args (nreverse inc-args))
     
     (if (eq truncate :unset)
 	(setf truncate t))
-    
-    ;;(format t "will operate on file ~A~%" spoolfile)
-    ;;(format t "truncate: ~A~%" truncate)
-    ;;(format t "dotlocking: ~A~%" dotlock)
     
     (with-spool-file (f spoolfile :dotlock dotlock)
       (when (eq f :no-spool)
@@ -82,9 +80,9 @@
 	  (let ((folders (get-folders-used-list tmpdir)))
 	    (dolist (folder folders)
 	      (when (not (string= folder "+inbox"))
-		(let ((cmdvec (vector "inc" "inc" folder "-file"
-				      (concatenate 'string tmpdir "/" folder)
-				      "-silent")))
+		(let ((cmdvec 
+		       (make-inc-cmdvec folder tmpdir "-silent" inc-args)))
+
 		  (if debug
 		      (debugcmd cmdvec))
 		  
@@ -96,13 +94,12 @@
 	      (write-line "inc: no mail to incorporate" excl::*stderr*)
 	      (finish-output excl::*stderr*) ;; yeesh
 	      (return-from main))
-	    
-	    (let ((cmdvec
-		   ;; having -truncate avoids a message about
-		   ;; the file not being zero'd.
-		   (vector "inc" "inc" "+inbox" "-file"
-			   (concatenate 'string tmpdir "/+inbox")
-			   "-truncate")))
+
+	    ;; having -truncate avoids a message about
+	    ;; the file not being zero'd.
+	    (let ((cmdvec 
+		   (make-inc-cmdvec "+inbox" tmpdir "-truncate" inc-args)))
+
 	      (if debug
 		  (debugcmd cmdvec))
 	      
@@ -131,9 +128,12 @@
 	  (list-to-delimited-string 
 	   (cdr (coerce vec 'list))
 	   #\space)))
-		    
-			
-	
-	
 
-
+(defun make-inc-cmdvec (folder tmpdir mode inc-args)
+  (coerce 
+   (append 
+    (list "inc" "inc" folder "-file"
+	  (concatenate 'string tmpdir "/" folder)
+	  mode)
+    inc-args)
+   'vector))
