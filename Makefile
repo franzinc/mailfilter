@@ -1,4 +1,4 @@
-lisp=/fi/cl/6.2/bin/redhat6/mlisp
+lisp=/fi/cl/6.2/bin/$(shell /fi/cl/6.2/acl/osname.sh)/mlisp
 installdir=/usr/fi
 installsubdir=$(installdir)/mailfilter
 
