@@ -1,3 +1,7 @@
+2003-06-19  Kevin Layer  <layer@crikey>
+
+	* Makefile: use /fi/cl/6.2/bin/redhat6/mlisp as the default
+
 2003-06-19  Ahmon Dancy  <dancy@dancy>
 
 	* incfilter.cl:  truncate spool file even if there are no messages

@@ -1,4 +1,4 @@
-lisp=/storage1/acl/mlisp
+lisp=/fi/cl/6.2/bin/redhat6/mlisp
 installdir=/usr/fi
 installsubdir=$(installdir)/mailfilter
 
@@ -32,6 +32,6 @@ uninstall:
 	rm -fr $installsubdir
 
 clean: 
-	rm -fr *.fasl *~ incfilter/ mailstatus/ folderfilter/
+	rm -fr *.fasl *~ incfilter/ mailstatus/ folderfilter/ *.out
 
 
