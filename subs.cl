@@ -184,8 +184,12 @@
 	      (equalp (car header) "Cc"))
 	  (setf res (nconc 
 		     res
-		     (get-addr-list (cdr header))))))
+		     (get-addr-list (unfold-header (cdr header)))))))
     res))
+
+(defun unfold-header (h)
+  (setf h (delete #\newline h)))
+  
 
 ;; In all of these functions, 'addr' is an email address
 ;; found in the message.  'check-against' is the address

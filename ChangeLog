@@ -1,3 +1,9 @@
+2003-07-21  Ahmon Dancy  <dancy@dancy>
+
+	* Updated install rule in makefile
+
+	* subs.cl: Unfold header before extracting email address list.
+
 2003-07-08  Ahmon Dancy  <dancy@dancy>
 
 	* incfilter.cl:  Fixed undesired spool truncation in debug mode.

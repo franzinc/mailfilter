@@ -21,15 +21,15 @@ folderfilter/folderfilter: $(libfiles) folderfilter.cl
 install: all
 	mkdir -p $(installdir)
 	mkdir -p $(installsubdir)
+	-rm -fr $(installsubdir)/mailstatus 
 	cp -p mailstatus/* $(installsubdir)
+	-rm -fr $(installsubdir)/incfilter
 	cp -p incfilter/* $(installsubdir)
+	-rm -fr $(installsubdir)/folderfilder
 	cp -p folderfilter/* $(installsubdir)
 	cd $(installdir) && ln -sf $(installsubdir)/mailstatus 
 	cd $(installdir) && ln -sf $(installsubdir)/incfilter
 	cd $(installdir) && ln -sf $(installsubdir)/folderfilter
-
-install-incfilter: incfilter/incfilter
-	cp -p incfilter/* $(installsubdir)
 
 uninstall:
 	rm -fr $installsubdir
