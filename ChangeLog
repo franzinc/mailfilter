@@ -1,5 +1,13 @@
 2003-10-01  Ahmon Dancy  <dancy@dancy>
 
+	* subs.cl: dispatched-to-p: uriencode reportid and user strings
+	before passing them to do-http-request.
+
+	* subs.cl: collect-bh-id:  Do the same regular expression matching
+	on bh-id and subject headers (with preference given to the bh-id
+	header).  Before any data in the Bh-id header was accepted.  Now
+	only spr, bug, and rfe types are matched.
+
 	* incfilter.cl/sub.slc:  Make *logfilename* really work like a
 	configurable parameter.
 

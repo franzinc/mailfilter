@@ -277,30 +277,27 @@
 	     (return t))
 	 nil))))
 
-
 (defun collect-bh-id (headers)
   (block nil
-    (let ((bhid (get-header "Bh-Id" headers))
-	  subject)
-      (if bhid
-	  (return bhid))
-      (when (setf subject (get-header "Subject" headers))
-	(if 
-	    (=~word "\\(spr[0-9]+\\)" subject)
+    (let ((thing (or (get-header "Bh-Id" headers)
+		     (get-header "Subject" headers))))
+      (when thing
+	(if (=~word "\\(spr[0-9]+\\)" thing)
 	    (return $1))
-	(if (=~word "\\(bug[0-9]+\\)" subject)
+	(if (=~word "\\(bug[0-9]+\\)" thing)
 	    (return $1))
-	(if (=~word "\\(rfe[0-9]+\\)" subject)
-	    (return $1))
-	nil))))
+	(if (=~word "\\(rfe[0-9]+\\)" thing)
+	    (return $1))))))
 
+  
 
 (defun dispatched-to-p (reportid user)
   (let ((res 
 	 (do-http-request 
 	     (format nil 
 		     "http://bh.franz.com/dispatched-to-p?reportid=~a&user=~a"
-		     reportid user))))
+		     (net.aserve:uriencode-string reportid)
+		     (net.aserve:uriencode-string user)))))
     (string= res "t")))
 
 (defun load-user-config (homedir &key nocompile)
