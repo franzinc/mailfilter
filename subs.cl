@@ -300,6 +300,16 @@
 		     (net.aserve:uriencode-string user)))))
     (string= res "t")))
 
+(defun bh-appended-p (reportid msgid)
+  (let ((res 
+	 (do-http-request 
+	     (format nil 
+		     "http://bh.franz.com/appended-p?reportid=~a&msgid=~a"
+		     (net.aserve:uriencode-string reportid)
+		     (net.aserve:uriencode-string msgid)))))
+    (string= res "t")))
+
+
 (defun load-user-config (homedir &key nocompile)
   (let* ((basename (concatenate 'string homedir "/.mailfilter"))
 	 (clfile (concatenate 'string basename ".cl"))

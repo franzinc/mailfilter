@@ -1,3 +1,7 @@
+2004-06-12  Ahmon Dancy  <dancy@dancy>
+
+	* subs.cl:  Added bh-appended-p function for handler's use.
+
 2004-05-28  Ahmon Dancy  <dancy@dancy>
 	* incfilter.cl: Don't write to *logfilename* when in debug mode.
 	
