@@ -64,7 +64,7 @@
     (with-open-file (f (concatenate 'string homedir "/.mh_profile"))
       (while (setf line (read-line f nil nil))
 	(multiple-value-bind (found whole path)
-	    (match-regexp "^Path:\\b*\\(.*\\)$" line)
+	    (match-re "^Path:\\s*(.*)$" line)
 	  (declare (ignore whole))
 	  (when found
 	    (return-from get-mhpath 
@@ -132,7 +132,7 @@
 	  (format nil "~A~%~A" (cdr (first headers)) line)))
        (t
 	(multiple-value-bind (found whole name data)
-	    (match-regexp "^\\(\\B+\\)\\b*:\\b*\\(.*\\)$" line)
+	    (match-re "^(\\S+)\\s*:\\s*(.*)$" line)
 	  (declare (ignore whole))
 	  (if* found
 	     then
@@ -218,8 +218,8 @@
 ;; just matching on a piece of the address.
 
 (defmacro match (addr check-against &key case-fold)
-  `(match-regexp (concatenate 'string "^" ,check-against "$") ,addr
-		 :case-fold ,case-fold))
+  `(match-re (concatenate 'string "^" ,check-against "$") ,addr
+	     :case-fold ,case-fold))
 
 (defun address-matches-p (addr check-against &key domain)
   (let ((atpos-addr (position #\@ addr))
@@ -307,13 +307,16 @@
 		     (net.aserve:uriencode-string user)))))
     (string= res "t")))
 
+(defun clean-msgid (msgid)
+  (string-trim '(#\newline #\return #\space #\tab) msgid))
+
 (defun bh-appended-p (reportid msgid)
   (let ((res 
 	 (do-http-request 
 	     (format nil 
 		     "http://bh.franz.com/appended-p?reportid=~a&msgid=~a"
 		     (net.aserve:uriencode-string reportid)
-		     (net.aserve:uriencode-string msgid)))))
+		     (net.aserve:uriencode-string (clean-msgid msgid))))))
     (string= res "t")))
 
 

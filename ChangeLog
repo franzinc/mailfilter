@@ -1,3 +1,9 @@
+2004-12-17  Kevin Layer  <layer@gemini>
+
+	* subs.cl:
+	- remove last few match-regexp's in favor of match-re
+	- clean msgid before sending it in http query
+
 2004-11-30  Kevin Layer  <layer@gemini>
 
 	* Makefile: add cvs id
