@@ -77,7 +77,7 @@
 		(copy-message-to-stream f out (msginfo-headers minfo) 
 					:save-pos nil))))
 	  
-	  (if (> debug 1)
+	  (if (and debug (> debug 1))
 	      (break "You may now inspect ~A%" tmpdir))
 	  
 	  (let ((folders (get-folders-used-list tmpdir)))
