@@ -130,7 +130,8 @@
   
   (with-spool-file (f spoolfile :dotlock t)
     (when (eq f :no-spool)
-      (zero-box "+inbox" boxes))
+      (zero-box "+inbox" boxes)
+      (reset-new-count-for-boxes boxes))
     
     (when (and (streamp f) 
 	       (> (file-write-date f)
