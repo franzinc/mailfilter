@@ -1,0 +1,159 @@
+(in-package :user)
+
+(defun main (&rest args)
+  (let* ((user (getenv "USER"))
+	 (home (getenv "HOME"))
+	 (spoolfile (guess-spool-filename user))
+	 (prgname (pop args))
+	 (interval 30) ;; seconds
+	 (boxes (make-hash-table :test #'equal))
+	 show-time once debug)
+    (if (null user)
+	(error "Environment variable USER is not set"))
+    (if (null home)
+	(error "Environment variable HOME is not set"))
+    (if (null spoolfile)
+	(error "Couldn't determine your spool filename"))
+    
+    (while args
+      (cond 
+       ((string= (first args) "-t")
+	(pop args)
+	(if (null args)
+	    (error "~A: missing argument to -t" prgname))
+	(setf interval (parse-integer (pop args))))
+       ((string= (first args) "-T")
+	(pop args)
+	(setf show-time t))
+       ((string= (first args) "-o")
+	(pop args)
+	(setf once t))
+       ((string= (first args) "-d")
+	(pop args)
+	(setf debug t))
+       (t
+	(error "~A: Unexpected command line argument: ~A" (first args)))))
+
+    (load-user-config home :nocompile debug)
+    
+    ;; bleh
+    (setf *default-pathname-defaults* (pathname (chdir (get-mhpath home))))
+
+    (loop ;; interval loop
+      (with-output-to-string (output)
+	(if show-time
+	    (output-time output))
+	
+	;; the 'boxes' hash table holds entries in the following form:
+	;; +folder ==> (old new modification-time)
+	;; (old is not used for +inbox)
+	
+	(get-main-inbox-information spoolfile user boxes)
+	
+	(let ((ninbox (second (gethash "+inbox" boxes))))
+	  (if (> ninbox 0)
+	      (format output " ~D+" ninbox)))
+	
+	;; inbox ==> (shortname longname fullname)
+	(dolist (inbox (make-list-of-inboxes))
+	  (multiple-value-bind (old new)
+	      (get-other-inbox-information inbox boxes)
+	    (let ((shortname (first inbox)))
+	      (cond 
+	       ((and (> new 0) (> old 0))
+		(format output " ~D>~A:~D" new shortname old))
+	       ((> new 0)
+		(format output " ~D>~A" new shortname))
+	       ((> old 0)
+		(format output " ~A:~D" shortname old))))))
+	
+	(write-string (get-output-stream-string output))
+	(finish-output))
+
+      (if once
+	  (return))
+      
+      (sleep interval))))
+
+(defun ensure-box (box boxes)
+  (if (null (gethash box boxes))
+      (setf (gethash box boxes) (list 0 0 0))))
+
+;; make a list of
+;;  (shortname longname fullname) lists
+(defun make-list-of-inboxes ()
+  (let (inboxes)
+    (dolist (path (directory "."))
+      (let ((longname (enough-namestring path)))
+	(multiple-value-bind (found whole shortname)
+	    (match-regexp *inbox-regexp* longname)
+	  (declare (ignore whole))
+	  (when found
+	    (push (list shortname longname 
+			(concatenate 'string "+" longname))
+		  inboxes)))))
+    (sort-inboxes inboxes)))
+
+(defun sort-inboxes (inboxes)
+  (let (sorted entry)
+    (dolist (inbox *mailstatus-inbox-folder-order*)
+      (when (setf entry (find inbox inboxes :key #'first :test #'string=))
+	(push entry sorted)
+	(setf inboxes 
+	  (delete inbox inboxes :key #'first :test #'string=))))
+
+    (nconc (nreverse sorted)  (sort inboxes #'string< :key #'first))))
+
+(defun output-time (stream)
+  (multiple-value-bind (sec min hour)
+      (get-decoded-time)
+    (declare (ignore sec))
+    (if (= hour 0)
+	(setf hour 12))
+    (if (> hour 12)
+	(decf hour 12))
+    (format stream " ~D:~2,'0d" hour min)))
+
+;; Gets the new count for other inboxes as a side effect
+(defun get-main-inbox-information (spoolfile user boxes)
+  (ensure-box "+inbox" boxes)
+  
+  (with-spool-file (f spoolfile :dotlock t)
+    (when (eq f :no-spool)
+      (setf (gethash "+inbox" boxes) (list 0 0 0)))
+    
+    (when (and (streamp f) 
+	       (> (file-write-date f)
+		  (third (gethash "+inbox" boxes))))
+      (setf (third (gethash "+inbox" boxes)) (file-write-date f))
+      
+      (with-each-message (f box minfo user)
+	(ensure-box box boxes)
+	(incf (second (gethash box boxes)))
+	(skip-message f)))))
+	
+
+;; returns oldcount and newcount.
+(defun get-other-inbox-information (inbox boxes)
+  (let (old new)
+    (multiple-value-bind (shortname longname fullname)
+	(values-list inbox)
+      (declare (ignore shortname))
+      
+      (ensure-box fullname boxes)
+      
+      (setf new (second (gethash fullname boxes)))
+      
+      (when (> (file-write-date longname)
+	       (third (gethash fullname boxes)))
+	(setf (third (gethash fullname boxes)) 
+	  (file-write-date longname))
+	
+	(setf (first (gethash fullname boxes))
+	  (count-if 
+	   #'(lambda (p)
+	       (match-regexp "/[0-9]+$" (enough-namestring p)))
+	   (directory (concatenate 'string longname "/")))))
+      
+      (setf old (first (gethash fullname boxes))))
+    (values old new)))
