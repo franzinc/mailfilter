@@ -1,3 +1,13 @@
+2005-06-10  Ahmon Dancy  <dancy@dancy>
+
+	* sub.cl: Added with-timeout around dispatched-to-p and
+	bh-appended-p so that they signal an error if the transaction
+	takes more than *http-timeout* (default 15) seconds.
+	* incfilter.cl: Catch all unhandled errors and report them as
+	"inc: <error message>".  The mh-e stuff expects error messages to
+	be prefixed with "inc:".
+
+
 2004-12-17  Kevin Layer  <layer@gemini>
 
 	* subs.cl:

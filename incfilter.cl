@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.10 2004/11/30 21:31:53 layer Exp $
+;; $Id: incfilter.cl,v 1.11 2005/06/10 16:23:41 dancy Exp $
 
 (in-package :user)
 
@@ -149,14 +149,17 @@
 			      (tpl:*zoom-print-length* nil))
 			  (ignore-errors ;prevent recursion
 			   (format *terminal-io* "~
-~@<An unhandled error condition has been signalled:~3I ~a~I~:@>~%~%"
+~@<inc: An unhandled error condition has been signalled:~3I ~a~I~:@>~%~%"
 				   e))
 			  (ignore-errors ;prevent recursion
 			   (tpl:do-command "zoom"
 			     :from-read-eval-print-loop nil
 			     :count t :all t)))))))
 		(doit))
-	 else (doit)))))
+	 else 
+	      (handler-case (doit)
+		(error (c) 
+		  (format t "inc: ~a~&" c)))))))
 
 (defun make-temp-dir-name (homedir)
   (format nil "~A/incfilter.tmp.~D.~D"

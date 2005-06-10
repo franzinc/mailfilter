@@ -10,6 +10,7 @@
 (defparameter *incorporating-mail* nil)
 (defparameter *body-lines-to-read* 0)
 (defparameter *track-dispatches* nil)
+(defparameter *http-timeout* 15)
 ;; inbox-regexp is used in mailstatus
 (defparameter *inbox-regexp* "^inbox-(.*)") 
 ;; used by mailstatus
@@ -299,25 +300,27 @@
   
 
 (defun dispatched-to-p (reportid user)
-  (let ((res 
-	 (do-http-request 
-	     (format nil 
-		     "http://bh.franz.com/dispatched-to-p?reportid=~a&user=~a"
-		     (net.aserve:uriencode-string reportid)
-		     (net.aserve:uriencode-string user)))))
-    (string= res "t")))
+  (mp:with-timeout (*http-timeout* (error "bh.franz.com unresponsive")) 
+    (let ((res 
+	   (do-http-request 
+	       (format nil 
+		       "http://bh.franz.com/dispatched-to-p?reportid=~a&user=~a"
+		       (net.aserve:uriencode-string reportid)
+		       (net.aserve:uriencode-string user)))))
+      (string= res "t"))))
 
 (defun clean-msgid (msgid)
   (string-trim '(#\newline #\return #\space #\tab) msgid))
 
 (defun bh-appended-p (reportid msgid)
-  (let ((res 
-	 (do-http-request 
-	     (format nil 
-		     "http://bh.franz.com/appended-p?reportid=~a&msgid=~a"
-		     (net.aserve:uriencode-string reportid)
-		     (net.aserve:uriencode-string (clean-msgid msgid))))))
-    (string= res "t")))
+  (mp:with-timeout (*http-timeout* (error "bh.franz.com unresponsive")) 
+    (let ((res 
+	   (do-http-request 
+	       (format nil 
+		       "http://bh.franz.com/appended-p?reportid=~a&msgid=~a"
+		       (net.aserve:uriencode-string reportid)
+		       (net.aserve:uriencode-string (clean-msgid msgid))))))
+      (string= res "t"))))
 
 
 (defun load-user-config (homedir &key nocompile)
