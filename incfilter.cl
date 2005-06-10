@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.11 2005/06/10 16:23:41 dancy Exp $
+;; $Id: incfilter.cl,v 1.12 2005/06/10 16:28:51 layer Exp $
 
 (in-package :user)
 
@@ -92,7 +92,7 @@
 		   ;; Outside of with-each message.
 	  
 		   (if (and debug (> debug 1))
-		       (break "You may now inspect ~A%" tmpdir))
+		       (break "You may now inspect ~A" tmpdir))
 	  
 		   (let ((folders (get-folders-used-list tmpdir)))
 		     (dolist (folder folders)

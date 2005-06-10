@@ -1,3 +1,7 @@
+2005-06-10  Kevin Layer  <layer@gemini>
+
+	* incfilter.cl: fix broken format string (in the debug case only)
+
 2005-06-10  Ahmon Dancy  <dancy@dancy>
 
 	* sub.cl: Added with-timeout around dispatched-to-p and
