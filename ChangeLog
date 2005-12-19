@@ -1,3 +1,7 @@
+2005-12-19  Kevin Layer  <layer@relay.known.net>
+
+	* Makefile: use mlisp at home and /fi/cl/8.0/bin/mlisp at work
+
 2005-06-10  Kevin Layer  <layer@gemini>
 
 	* incfilter.cl: fix broken format string (in the debug case only)

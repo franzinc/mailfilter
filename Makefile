@@ -1,7 +1,15 @@
-# $Id: Makefile,v 1.8 2004/11/30 21:31:53 layer Exp $
+# $Id: Makefile,v 1.9 2005/12/19 18:21:48 layer Exp $
 
-lisp=/fi/cl/7.0/bin/$(shell /fi/cl/7.0/acl/osname.sh)/mlisp
+at_franz = $(shell if test -d /fi/cl/8.0/acl; then echo t; else echo nil; fi)
+
+ifeq ($(at_franz),t)
+lisp=/fi/cl/8.0/bin/mlisp
 installdir=/usr/fi
+else
+lisp=mlisp
+installdir=/usr/local
+endif
+
 installsubdir=$(installdir)/mailfilter
 
 libfiles=emailaddr.cl lex.cl load.cl parse.cl spool.cl subs.cl
