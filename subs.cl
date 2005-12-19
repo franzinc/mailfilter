@@ -327,12 +327,16 @@
   (let* ((basename (concatenate 'string homedir "/.mailfilter"))
 	 (clfile (concatenate 'string basename ".cl"))
 	 (faslfile (concatenate 'string basename ".fasl")))
-    (when (probe-file clfile)
-      (if (not nocompile)
+    (catch :retry-config-load
+      (when (probe-file clfile)
+	(unless nocompile
 	  (compile-file-if-needed clfile :verbose nil :print nil))
-      (if nocompile
-	  (load clfile :verbose nil)
-	(load faslfile :verbose nil)))))
+	(if* nocompile
+	   then (load clfile :verbose nil)
+	   else (handler-case (load faslfile :verbose nil)
+		  (excl::file-incompatible-fasl-error ()
+		    (delete-file faslfile)
+		    (throw :retry-config-load nil))))))))
 
 (defmacro with-each-message ((spoolstream classificationvar minfovar user
 			      &key (initial-msgnum 0))
