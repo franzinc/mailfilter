@@ -1,3 +1,9 @@
+2005-12-21  Kevin Layer  <layer@relay.known.net>
+
+	* mailstatus.cl: make sure there is some output if there is no
+	  mail and no inboxes... this ensures that the previous status
+	  line will be cleared.
+
 2005-12-19  Kevin Layer  <layer@relay.known.net>
 
 	* Makefile: use mlisp at home and /fi/cl/8.0/bin/mlisp at work

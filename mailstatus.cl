@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.4 2004/11/30 21:31:53 layer Exp $
+;; $Id: mailstatus.cl,v 1.5 2005/12/21 17:54:46 layer Exp $
 
 (in-package :user)
 
@@ -69,6 +69,10 @@
 		       (format output " ~D>~A" new shortname))
 		      ((> old 0)
 		       (format output " ~A:~D" shortname old))))))
+	       ;; make sure there is some output if there is no mail and no
+	       ;; inboxes... this ensures that the previous status line
+	       ;; will be cleared.
+	       (format output " ")
 	
 	       (write-string (get-output-stream-string output))
 	       (finish-output))
