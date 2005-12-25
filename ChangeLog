@@ -1,3 +1,8 @@
+2005-12-25  Kevin Layer  <layer@relay.known.net>
+
+	* mailstatus.cl: print something other than " " when there is
+	  nothing to report... so we know mailstatus didn't crash.
+
 2005-12-21  Kevin Layer  <layer@relay.known.net>
 
 	* mailstatus.cl: make sure there is some output if there is no

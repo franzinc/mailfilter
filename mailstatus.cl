@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.5 2005/12/21 17:54:46 layer Exp $
+;; $Id: mailstatus.cl,v 1.6 2005/12/25 19:01:29 layer Exp $
 
 (in-package :user)
 
@@ -54,31 +54,30 @@
 	       (get-main-inbox-information spoolfile user boxes)
 	
 	       (let ((ninbox (second (gethash "+inbox" boxes))))
-		 (if (> ninbox 0)
-		     (format output " ~D+" ninbox)))
+		 (when (> ninbox 0)
+		   (format output " ~D+" ninbox)))
 	
 	       ;; inbox ==> (shortname longname fullname)
 	       (dolist (inbox (make-list-of-inboxes))
 		 (multiple-value-bind (old new)
 		     (get-other-inbox-information inbox boxes)
 		   (let ((shortname (first inbox)))
-		     (cond 
-		      ((and (> new 0) (> old 0))
+		     (cond ((and (> new 0) (> old 0))
 		       (format output " ~D>~A:~D" new shortname old))
-		      ((> new 0)
-		       (format output " ~D>~A" new shortname))
-		      ((> old 0)
-		       (format output " ~A:~D" shortname old))))))
-	       ;; make sure there is some output if there is no mail and no
-	       ;; inboxes... this ensures that the previous status line
-	       ;; will be cleared.
-	       (format output " ")
-	
-	       (write-string (get-output-stream-string output))
-	       (finish-output))
+		      ((> new 0) (format output " ~D>~A" new shortname))
+		      ((> old 0) (format output " ~A:~D" shortname old))))))
 
-	     (if once
-		 (return))
+	       (let ((string (get-output-stream-string output)))
+		 (when (string= "" string)
+		   ;; make sure there is some output if there is no mail
+		   ;; and no inboxes... this ensures that the previous
+		   ;; status line will be cleared and gives an indication
+		   ;; that mailstatus did not crash.  :)
+		   (setq string "<no mail>"))
+		 (write-string string)
+		 (finish-output)))
+
+	     (when once (return))
       
 	     (sleep interval))))
       (if* debug
