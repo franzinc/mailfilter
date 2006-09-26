@@ -1,13 +1,13 @@
-# $Id: Makefile,v 1.9 2005/12/19 18:21:48 layer Exp $
+# $Id: Makefile,v 1.10 2006/09/26 01:22:36 dancy Exp $
 
 at_franz = $(shell if test -d /fi/cl/8.0/acl; then echo t; else echo nil; fi)
 
 ifeq ($(at_franz),t)
 lisp=/fi/cl/8.0/bin/mlisp
-installdir=/usr/fi
+installdir=$(RPM_BUILD_ROOT)/usr/fi
 else
 lisp=mlisp
-installdir=/usr/local
+installdir=$(RPM_BUILD_ROOT)/usr/local
 endif
 
 installsubdir=$(installdir)/mailfilter
@@ -31,7 +31,7 @@ folderfilter/folderfilter: $(libfiles) folderfilter.cl
 install: all
 	mkdir -p $(installdir)
 	rm -fr $(installsubdir).old
-	mv $(installsubdir) $(installsubdir).old
+	-mv $(installsubdir) $(installsubdir).old
 	mkdir -p $(installsubdir)
 	-rm -fr $(installsubdir)/mailstatus 
 	cp -p mailstatus/* $(installsubdir)
@@ -49,4 +49,37 @@ uninstall:
 clean: 
 	rm -fr *.fasl *~ incfilter/ mailstatus/ folderfilter/ *.out
 
+name := mailfilter
 
+version := $(shell grep 'mailfilter-version' version.cl | sed -e 's,.*"\(.*\)".*,\1,')
+tardir := $(name)-$(version)
+tarball := $(name)-$(version).tar.gz
+release ?= 1
+
+files := Makefile *.cl 
+
+tarball:
+	mkdir $(tardir)
+	cp $(files) $(tardir)
+	tar zcf $(tarball) $(tardir)
+	rm -fr $(tardir)
+
+rpm:    tarball
+	mkdir -p BUILD RPMS/i386 SRPMS
+	rpmbuild --define "_sourcedir $(CURDIR)" \
+		--define "_topdir $(CURDIR)" \
+		--define "version $(version)" \
+		--define "release $(release)" \
+		--sign \
+		-ba $(name).spec
+	rm $(tarball)
+
+ARCH=$(shell uname -i)
+REPOHOST=fs1
+REPODIR=/storage1/franz/$(ARCH)
+
+
+install-repo:
+	ssh root@$(REPOHOST) "rm -f $(REPODIR)/$(name)-*"
+	scp RPMS/$(ARCH)/$(name)-$(version)-*.rpm root@$(REPOHOST):$(REPODIR)
+	ssh root@$(REPOHOST) "createrepo -q $(REPODIR)"

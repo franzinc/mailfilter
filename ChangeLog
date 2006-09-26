@@ -1,3 +1,12 @@
+**** Don't forget to update the version in version.cl ****
+
+v1.0
+2006-09-25  Ahmon Dancy  <dancy@dancy>
+
+	* Added version.cl
+	* Makefile: Added RPM support.
+	* mailfilter.spec: New
+
 2005-12-25  Kevin Layer  <layer@relay.known.net>
 
 	* mailstatus.cl: print something other than " " when there is
