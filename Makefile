@@ -1,9 +1,12 @@
-# $Id: Makefile,v 1.10 2006/09/26 01:22:36 dancy Exp $
+# $Id: Makefile,v 1.11 2006/12/29 22:25:05 dancy Exp $
 
 at_franz = $(shell if test -d /fi/cl/8.0/acl; then echo t; else echo nil; fi)
 
+ARCH=$(shell uname -i)
+
 ifeq ($(at_franz),t)
-lisp=/fi/cl/8.0/bin/mlisp
+mlisp=$(shell if [ $(ARCH) = x86_64 ]; then echo mlisp-64; else echo mlisp; fi)
+lisp=/fi/cl/8.0/bin/$(mlisp)
 installdir=$(RPM_BUILD_ROOT)/usr/fi
 else
 lisp=mlisp
@@ -74,7 +77,7 @@ rpm:    tarball
 		-ba $(name).spec
 	rm $(tarball)
 
-ARCH=$(shell uname -i)
+
 REPOHOST=fs1
 REPODIR=/storage1/franz/$(ARCH)
 

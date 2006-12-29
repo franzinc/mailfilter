@@ -1,3 +1,7 @@
+2006-12-29  Ahmon Dancy  <dancy@dancy>
+
+	* ChangeLog: Added support for building on 64-bit platform.
+
 **** Don't forget to update the version in version.cl ****
 
 v1.0
