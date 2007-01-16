@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.6 2005/12/25 19:01:29 layer Exp $
+;; $Id: mailstatus.cl,v 1.7 2007/01/16 18:25:13 layer Exp $
 
 (in-package :user)
 
@@ -19,6 +19,12 @@
     
     (while args
       (cond 
+       ((string= (first args) "-c")
+	(pop args)
+	(setq *config-file* (first args))
+	(or (probe-file *config-file*)
+	    (error "Config file ~a does not exist." *config-file*))
+	(pop args))
        ((string= (first args) "-t")
 	(pop args)
 	(if (null args)
@@ -33,8 +39,7 @@
        ((string= (first args) "-d")
 	(pop args)
 	(setf debug t))
-       (t
-	(error "~A: Unexpected command line argument: ~A" (first args)))))
+       (t (error "~A: Unexpected command line argument: ~A" (first args)))))
 
     (load-user-config home :nocompile debug)
     

@@ -29,6 +29,7 @@
   subject
   bhid
   dispatched
+  dispatched-to
   class)
   
 (defmacro defclassification ((infovar) &body body)
@@ -298,16 +299,28 @@
 	    (return $1))))))
 
   
-
+#+ignore ;; not needed anymore
 (defun dispatched-to-p (reportid user)
   (mp:with-timeout (*http-timeout* (error "bh.franz.com unresponsive")) 
     (let ((res 
 	   (do-http-request 
-	       (format nil 
-		       "http://bh.franz.com/dispatched-to-p?reportid=~a&user=~a"
-		       (net.aserve:uriencode-string reportid)
-		       (net.aserve:uriencode-string user)))))
+	       (format
+		nil 
+		"http://bh.franz.com/dispatched-to-p?reportid=~a&user=~a"
+		(net.aserve:uriencode-string reportid)
+		(net.aserve:uriencode-string user)))))
       (string= res "t"))))
+
+(defun dispatched-to (reportid)
+  (mp:with-timeout (*http-timeout* (error "bh.franz.com unresponsive")) 
+    (multiple-value-bind (res code)
+	(do-http-request 
+	    (format nil 
+		    "http://bh.franz.com/dispatched-to?reportid=~a"
+		    (net.aserve:uriencode-string reportid)))
+      (if* (and (eql code 200) (stringp res))
+	 then res
+	 else nil))))
 
 (defun clean-msgid (msgid)
   (string-trim '(#\newline #\return #\space #\tab) msgid))
@@ -323,10 +336,13 @@
       (string= res "t"))))
 
 
+(defvar *config-file* nil)
+
 (defun load-user-config (homedir &key nocompile)
-  (let* ((basename (concatenate 'string homedir "/.mailfilter"))
-	 (clfile (concatenate 'string basename ".cl"))
-	 (faslfile (concatenate 'string basename ".fasl")))
+  (let* ((clfile
+	  (or *config-file*
+	      (concatenate 'string homedir "/" ".mailfilter.cl")))
+	 (faslfile (merge-pathnames #p(:type "fasl") clfile)))
     (catch :retry-config-load
       (when (probe-file clfile)
 	(unless nocompile
@@ -347,6 +363,7 @@
 	(headers (gensym))
 	(bodylines (gensym))
 	(froms (gensym))
+	(dispatched-to (gensym))
 	(tos (gensym)))
     `(let ((,spoolstreamvar ,spoolstream)
 	   (,uservar ,user)
@@ -369,8 +386,11 @@
 		   :class (get-header "Class" ,headers))))
 	     
 	     (when (and *track-dispatches* (msginfo-bhid ,minfovar))
-	       (setf (msginfo-dispatched ,minfovar)
-		 (dispatched-to-p (msginfo-bhid ,minfovar) ,uservar)))
+	       (let ((,dispatched-to (dispatched-to (msginfo-bhid ,minfovar))))
+		 (setf (msginfo-dispatched-to ,minfovar) ,dispatched-to)
+		 (setf (msginfo-dispatched ,minfovar)
+		   (and ,dispatched-to
+			(string= ,uservar ,dispatched-to)))))
 	     
 	     (let ((,classificationvar 
 		    (if (fboundp 'classify-message)

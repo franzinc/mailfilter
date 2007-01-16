@@ -15,10 +15,14 @@
     (if (null home)
 	(error "Environment variable HOME is not set"))
     
-    (load-user-config home)
-    
     (while args
       (cond 
+       ((string= (first args) "-c")
+	(pop args)
+	(setq *config-file* (first args))
+	(or (probe-file *config-file*)
+	    (error "Config file ~a does not exist." *config-file*))
+	(pop args))
        ((string= (first args) "-d")
 	(setf debug t)
 	(pop args))
@@ -26,8 +30,9 @@
 	(if folder
 	    (error "~A: Already specified a folder: ~A" prgname folder))
 	(setf folder (pop args)))
-       (t
-	(error "~A: Invalid argument: ~A" prgname (first args)))))
+       (t (error "~A: Invalid argument: ~A" prgname (first args)))))
+    
+    (load-user-config home :nocompile debug)
     
     (if (null folder)
 	(error "Usage: ~A [-d] folder" prgname))

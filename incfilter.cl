@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.12 2005/06/10 16:28:51 layer Exp $
+;; $Id: incfilter.cl,v 1.13 2007/01/16 18:25:13 layer Exp $
 
 (in-package :user)
 
@@ -25,10 +25,14 @@
     (if (null spoolfile)
 	(error "Couldn't determine your spool filename"))
     
-    (load-user-config home)
-    
     (while args
       (cond 
+       ((string= (first args) "-c")
+	(pop args)
+	(setq *config-file* (first args))
+	(or (probe-file *config-file*)
+	    (error "Config file ~a does not exist." *config-file*))
+	(pop args))
        ((string= (first args) "-d")
 	(if debug
 	    (incf debug)
@@ -48,8 +52,9 @@
 	(setf dotlock nil)
 	(if (eq truncate :unset)
 	    (setf truncate nil)))
-       (t
-	(push (pop args) inc-args))))
+       (t (push (pop args) inc-args))))
+    
+    (load-user-config home :nocompile debug)
     
     (setf inc-args (nreverse inc-args))
     
