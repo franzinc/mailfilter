@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.7 2007/01/16 18:25:13 layer Exp $
+;; $Id: mailstatus.cl,v 1.8 2007/05/02 21:41:28 layer Exp $
 
 (in-package :user)
 
@@ -6,6 +6,7 @@
   (let* ((user (getenv "USER"))
 	 (home (getenv "HOME"))
 	 (spoolfile (guess-spool-filename user))
+	 (dotlock t)
 	 (prgname (pop args))
 	 (interval 30) ;; seconds
 	 (boxes (make-hash-table :test #'equal))
@@ -39,6 +40,12 @@
        ((string= (first args) "-d")
 	(pop args)
 	(setf debug t))
+       ((string= (first args) "-file")
+	(pop args)
+	(when (null args)
+	  (error "mailstatus: missing argument to -file"))
+	(setf spoolfile (pop args))
+	(setf dotlock nil))
        (t (error "~A: Unexpected command line argument: ~A" (first args)))))
 
     (load-user-config home :nocompile debug)
@@ -55,8 +62,8 @@
 	       ;; the 'boxes' hash table holds entries in the following form:
 	       ;; +folder ==> (old new modification-time)
 	       ;; (old is not used for +inbox)
-	
-	       (get-main-inbox-information spoolfile user boxes)
+
+	       (get-main-inbox-information spoolfile user boxes dotlock)
 	
 	       (let ((ninbox (second (gethash "+inbox" boxes))))
 		 (when (> ninbox 0)
@@ -157,10 +164,10 @@
 
 ;; Gets the new count for other inboxes as a side effect
 
-(defun get-main-inbox-information (spoolfile user boxes)
+(defun get-main-inbox-information (spoolfile user boxes dotlock)
   (ensure-box "+inbox" boxes)
   
-  (with-spool-file (f spoolfile :dotlock t)
+  (with-spool-file (f spoolfile :dotlock dotlock)
     (when (eq f :no-spool)
       (zero-box "+inbox" boxes)
       (reset-new-count-for-boxes boxes))

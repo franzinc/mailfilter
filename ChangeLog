@@ -2,6 +2,11 @@
 **** (please leave this header at the top of the file) ****
 
 2007-05-02  Kevin Layer  <layer@gemini.franz.com>
+v1.3
+
+	* mailstatus.cl: add -file argument
+
+2007-05-02  Kevin Layer  <layer@gemini.franz.com>
 v1.2
 
 	* Makefile: use 8.1.beta; default is `clean' and `all'
