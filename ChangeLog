@@ -1,6 +1,14 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2007-05-02  Kevin Layer  <layer@gemini.franz.com>
+v1.2
+
+	* Makefile: use 8.1.beta; default is `clean' and `all'
+	* subs.cl: make `actions' available to filters; add debugging
+          (#+ignore'd for now); make sure message-is-my-spr-p takes
+          into account sprs w/actions
+
 2007-01-16  Kevin Layer  <layer@gemini.franz.com>
 v1.1
 	* subs.cl: new dispatched-to; dispatched-to-p is gone and

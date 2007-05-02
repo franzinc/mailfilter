@@ -30,6 +30,7 @@
   bhid
   dispatched
   dispatched-to
+  actions
   class)
   
 (defmacro defclassification ((infovar) &body body)
@@ -298,7 +299,6 @@
 	(if (=~word "(rfe[0-9]+)" thing)
 	    (return $1))))))
 
-  
 #+ignore ;; not needed anymore
 (defun dispatched-to-p (reportid user)
   (mp:with-timeout (*http-timeout* (error "bh.franz.com unresponsive")) 
@@ -318,8 +318,12 @@
 	    (format nil 
 		    "http://bh.franz.com/dispatched-to?reportid=~a"
 		    (net.aserve:uriencode-string reportid)))
-      (if* (and (eql code 200) (stringp res))
-	 then res
+      (if* (and (eql code 200)
+		(stringp res)
+		(string/= "" res))
+	 then (destructuring-bind (dispatched-to actions)
+		  (read-from-string res)
+		(values dispatched-to actions))
 	 else nil))))
 
 (defun clean-msgid (msgid)
@@ -364,6 +368,7 @@
 	(bodylines (gensym))
 	(froms (gensym))
 	(dispatched-to (gensym))
+	(actions (gensym))
 	(tos (gensym)))
     `(let ((,spoolstreamvar ,spoolstream)
 	   (,uservar ,user)
@@ -386,17 +391,40 @@
 		   :class (get-header "Class" ,headers))))
 	     
 	     (when (and *track-dispatches* (msginfo-bhid ,minfovar))
-	       (let ((,dispatched-to (dispatched-to (msginfo-bhid ,minfovar))))
+	       (multiple-value-bind (,dispatched-to ,actions)
+		   (dispatched-to (msginfo-bhid ,minfovar))
 		 (setf (msginfo-dispatched-to ,minfovar) ,dispatched-to)
+		 (setf (msginfo-actions ,minfovar) ,actions)
 		 (setf (msginfo-dispatched ,minfovar)
 		   (and ,dispatched-to
 			(string= ,uservar ,dispatched-to)))))
+	     
+	     #+ignore
+	     (let ((,classificationvar 
+		    (if (fboundp 'classify-message)
+			(handler-bind
+			    ((error
+			      (lambda (c)
+				(with-standard-io-syntax
+				  (let ((*print-readably* nil)
+					(*print-miser-width* 40)
+					(*print-pretty* t)
+					(top-level:*zoom-print-circle* t)
+					(top-level:*zoom-print-level* nil)
+					(top-level:*zoom-print-length* nil)
+					(*standard-output* *terminal-io*))
+				    (format t "Error: ~a~%" c)
+				    (top-level:do-command "zoom"
+				      :from-read-eval-print-loop nil
+				      :count t :all t))))))
+			  (funcall 'classify-message ,minfovar))
+		      "+inbox")))
+	       ,@body)
 	     
 	     (let ((,classificationvar 
 		    (if (fboundp 'classify-message)
 			(funcall 'classify-message ,minfovar)
 		      "+inbox")))
-	       
 	       ,@body)))))))
 
 (defmacro with-single-message ((spoolstream classificationvar minfovar user
@@ -429,4 +457,7 @@
      (and (one-of-addrs-is-in-checklist-p (msginfo-froms minfo) "handler")
 	  (one-of-addrs-is-in-checklist-p (msginfo-tos minfo) user)
 	  (msginfo-subject minfo)
-	  (=~ "^sprs\\.\\.\\." (msginfo-subject minfo))))))
+	  (=~ "^sprs\\.\\.\\." (msginfo-subject minfo)))
+     
+     (and (msginfo-actions minfo)
+	  (member user (msginfo-actions minfo) :test #'string=)))))

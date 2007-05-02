@@ -1,12 +1,12 @@
-# $Id: Makefile,v 1.11 2006/12/29 22:25:05 dancy Exp $
+# $Id: Makefile,v 1.12 2007/05/02 17:13:53 layer Exp $
 
-at_franz = $(shell if test -d /fi/cl/8.0/acl; then echo t; else echo nil; fi)
+at_franz = $(shell if test -d /fi/cl/8.1.beta/acl; then echo t; else echo nil; fi)
 
 ARCH=$(shell uname -i)
 
 ifeq ($(at_franz),t)
 mlisp=$(shell if [ $(ARCH) = x86_64 ]; then echo mlisp-64; else echo mlisp; fi)
-lisp=/fi/cl/8.0/bin/$(mlisp)
+lisp=/fi/cl/8.1.beta/bin/$(mlisp)
 installdir=$(RPM_BUILD_ROOT)/usr/fi
 else
 lisp=mlisp
@@ -16,6 +16,8 @@ endif
 installsubdir=$(installdir)/mailfilter
 
 libfiles=emailaddr.cl lex.cl load.cl parse.cl spool.cl subs.cl
+
+default: clean all
 
 all: mailstatus/mailstatus incfilter/incfilter folderfilter/folderfilter
 

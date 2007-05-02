@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.13 2007/01/16 18:25:13 layer Exp $
+;; $Id: incfilter.cl,v 1.14 2007/05/02 17:13:53 layer Exp $
 
 (in-package :user)
 
@@ -161,10 +161,8 @@
 			     :from-read-eval-print-loop nil
 			     :count t :all t)))))))
 		(doit))
-	 else 
-	      (handler-case (doit)
-		(error (c) 
-		  (format t "inc: ~a~&" c)))))))
+	 else (handler-case (doit)
+		(error (c) (format t "inc: ~a~&" c)))))))
 
 (defun make-temp-dir-name (homedir)
   (format nil "~A/incfilter.tmp.~D.~D"
