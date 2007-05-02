@@ -1,0 +1,8 @@
+
+remember to incf the version number before doing this:
+
+make rpm && make install-repo
+
+on gemini (as root):
+yum -y update mailfilter
+
