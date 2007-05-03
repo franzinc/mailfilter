@@ -342,21 +342,21 @@
 
 (defvar *config-file* nil)
 
-(defun load-user-config (homedir &key nocompile)
+(defun load-user-config (homedir &key (compile t))
   (let* ((clfile
 	  (or *config-file*
 	      (concatenate 'string homedir "/" ".mailfilter.cl")))
 	 (faslfile (merge-pathnames #p(:type "fasl") clfile)))
-    (catch :retry-config-load
+    (tagbody
+     retry-config-load
       (when (probe-file clfile)
-	(unless nocompile
-	  (compile-file-if-needed clfile :verbose nil :print nil))
-	(if* nocompile
-	   then (load clfile :verbose nil)
-	   else (handler-case (load faslfile :verbose nil)
+	(if* compile
+	   then (compile-file-if-needed clfile :verbose nil :print nil)
+		(handler-case (load faslfile :verbose nil)
 		  (excl::file-incompatible-fasl-error ()
 		    (delete-file faslfile)
-		    (throw :retry-config-load nil))))))))
+		    (go retry-config-load)))
+	   else (load clfile :verbose nil))))))
 
 (defmacro with-each-message ((spoolstream classificationvar minfovar user
 			      &key (initial-msgnum 0))

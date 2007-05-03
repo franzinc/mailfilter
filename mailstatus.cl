@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.8 2007/05/02 21:41:28 layer Exp $
+;; $Id: mailstatus.cl,v 1.9 2007/05/03 18:12:57 layer Exp $
 
 (in-package :user)
 
@@ -48,7 +48,7 @@
 	(setf dotlock nil))
        (t (error "~A: Unexpected command line argument: ~A" (first args)))))
 
-    (load-user-config home :nocompile debug)
+    (load-user-config home :compile (not debug))
     
     ;; bleh
     (setf *default-pathname-defaults* (pathname (chdir (get-mhpath home))))

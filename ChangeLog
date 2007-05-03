@@ -1,6 +1,15 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2007-05-03  Kevin Layer  <layer@relay.known.net>
+v1.4
+
+	* folderfilter.cl: load-user-config: :nocompile -> :compile
+	* incfilter.cl: load-user-config: :nocompile -> :compile
+	* mailstatus.cl: load-user-config: :nocompile -> :compile
+	* subs.cl: load-user-config: change nocompile to compile and
+          fix recompile on incompatible fasl
+
 2007-05-02  Kevin Layer  <layer@gemini.franz.com>
 v1.3
 

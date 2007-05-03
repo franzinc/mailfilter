@@ -32,7 +32,7 @@
 	(setf folder (pop args)))
        (t (error "~A: Invalid argument: ~A" prgname (first args)))))
     
-    (load-user-config home :nocompile debug)
+    (load-user-config home :compile (not debug))
     
     (if (null folder)
 	(error "Usage: ~A [-d] folder" prgname))
