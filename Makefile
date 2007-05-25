@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.12 2007/05/02 17:13:53 layer Exp $
+# $Id: Makefile,v 1.13 2007/05/25 00:34:53 dancy Exp $
 
 at_franz = $(shell if test -d /fi/cl/8.1.beta/acl; then echo t; else echo nil; fi)
 
@@ -53,6 +53,9 @@ uninstall:
 
 clean: 
 	rm -fr *.fasl *~ incfilter/ mailstatus/ folderfilter/ *.out
+
+realclean: clean
+	rm -fr BUILD RPMS
 
 name := mailfilter
 
