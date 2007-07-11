@@ -296,7 +296,7 @@
 	(when (=~word "(bug[0-9]+)"   subj) (return $1))
 	(when (=~word "(rfe[0-9]+)"   subj) (return $1))
 	(when (=~word "(bhrfe[0-9]+)" subj) (return $1))
-.	(when (=~word "(bhbug[0-9]+)" subj) (return $1))))))
+	(when (=~word "(bhbug[0-9]+)" subj) (return $1))))))
 
 #+ignore ;; not needed anymore
 (defun dispatched-to-p (reportid user)
