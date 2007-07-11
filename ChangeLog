@@ -4,6 +4,7 @@
 2007-07-11  Kevin Layer  <layer@gemini.franz.com>
 v1.5
 
+	* Makefile: use 8.1 instead of 8.1.beta
 	* subs.cl (collect-bh-id): better heuristic for determining
 	  bh-id
 

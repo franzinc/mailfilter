@@ -290,7 +290,7 @@
       (when id
 	;; Always trust the Bh-Id
 	(return id))
-      (when thing
+      (when subj
 	;; Only trust a few types of things in the subject
 	(when (=~word "(spr[0-9]+)"   subj) (return $1))
 	(when (=~word "(bug[0-9]+)"   subj) (return $1))
