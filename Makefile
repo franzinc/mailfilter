@@ -1,12 +1,12 @@
-# $Id: Makefile,v 1.13 2007/05/25 00:34:53 dancy Exp $
+# $Id: Makefile,v 1.14 2007/07/11 22:47:26 layer Exp $
 
-at_franz = $(shell if test -d /fi/cl/8.1.beta/acl; then echo t; else echo nil; fi)
+at_franz = $(shell if test -d /fi/cl/8.1/acl; then echo t; else echo nil; fi)
 
 ARCH=$(shell uname -i)
 
 ifeq ($(at_franz),t)
 mlisp=$(shell if [ $(ARCH) = x86_64 ]; then echo mlisp-64; else echo mlisp; fi)
-lisp=/fi/cl/8.1.beta/bin/$(mlisp)
+lisp=/fi/cl/8.1/bin/$(mlisp)
 installdir=$(RPM_BUILD_ROOT)/usr/fi
 else
 lisp=mlisp

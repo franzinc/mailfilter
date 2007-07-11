@@ -277,27 +277,26 @@
        (let ((,stringvar ,string))
 	 (if (not (stringp ,string))
 	     (return nil))
-	 (if (=~ ,r1 ,stringvar)
-	     (return t))
-	 (if (=~ ,r2 ,stringvar)
-	     (return t))
-	 (if (=~ ,r3 ,stringvar)
-	     (return t))
-	 (if (=~ ,r4 ,stringvar)
-	     (return t))
+	 (if (=~ ,r1 ,stringvar) (return t))
+	 (if (=~ ,r2 ,stringvar) (return t))
+	 (if (=~ ,r3 ,stringvar) (return t))
+	 (if (=~ ,r4 ,stringvar) (return t))
 	 nil))))
 
 (defun collect-bh-id (headers)
   (block nil
-    (let ((thing (or (get-header "Bh-Id" headers)
-		     (get-header "Subject" headers))))
+    (let ((subj (get-header "Subject" headers))
+	  (id (get-header "Bh-Id" headers)))
+      (when id
+	;; Always trust the Bh-Id
+	(return id))
       (when thing
-	(if (=~word "(spr[0-9]+)" thing)
-	    (return $1))
-	(if (=~word "(bug[0-9]+)" thing)
-	    (return $1))
-	(if (=~word "(rfe[0-9]+)" thing)
-	    (return $1))))))
+	;; Only trust a few types of things in the subject
+	(when (=~word "(spr[0-9]+)"   subj) (return $1))
+	(when (=~word "(bug[0-9]+)"   subj) (return $1))
+	(when (=~word "(rfe[0-9]+)"   subj) (return $1))
+	(when (=~word "(bhrfe[0-9]+)" subj) (return $1))
+.	(when (=~word "(bhbug[0-9]+)" subj) (return $1))))))
 
 #+ignore ;; not needed anymore
 (defun dispatched-to-p (reportid user)
@@ -342,7 +341,7 @@
 
 (defvar *config-file* nil)
 
-(defun load-user-config (homedir &key (compile t))
+(defun load-user-config (homedir &key (compile t) if-changed)
   (let* ((clfile
 	  (or *config-file*
 	      (concatenate 'string homedir "/" ".mailfilter.cl")))
@@ -350,13 +349,21 @@
     (tagbody
      retry-config-load
       (when (probe-file clfile)
-	(if* compile
-	   then (compile-file-if-needed clfile :verbose nil :print nil)
-		(handler-case (load faslfile :verbose nil)
-		  (excl::file-incompatible-fasl-error ()
-		    (delete-file faslfile)
-		    (go retry-config-load)))
-	   else (load clfile :verbose nil))))))
+	(when (or (null if-changed)
+		  (and compile (not (probe-file faslfile)))
+		  (and compile (> (file-write-date clfile)
+				  (file-write-date faslfile)))
+		  (not compile))
+;;;;(format t "~&;loading config~%")
+	  (if* compile
+	     then (compile-file-if-needed clfile :verbose nil :print nil)
+		  (handler-case (load faslfile :verbose nil)
+		    (excl::file-incompatible-fasl-error ()
+		      (delete-file faslfile)
+		      (go retry-config-load)))
+	     else (load clfile :verbose nil))
+	  ;; non-nil means we did something.
+	  t)))))
 
 (defmacro with-each-message ((spoolstream classificationvar minfovar user
 			      &key (initial-msgnum 0))

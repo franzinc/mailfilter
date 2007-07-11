@@ -1,7 +1,12 @@
 
 remember to incf the version number before doing this:
 
-make rpm && make install-repo
+  make rpm && make install-repo
+    (supply the root password if prompted)
+or
+  make release=3 rpm && make install-repo
+if you want to package up the same version rebuilt with a different
+lisp.
 
 on gemini (as root):
 yum -y update mailfilter

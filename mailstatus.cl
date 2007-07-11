@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.9 2007/05/03 18:12:57 layer Exp $
+;; $Id: mailstatus.cl,v 1.10 2007/07/11 22:47:00 layer Exp $
 
 (in-package :user)
 
@@ -54,7 +54,7 @@
     (setf *default-pathname-defaults* (pathname (chdir (get-mhpath home))))
 
     (flet
-	((doit ()
+	((doit (&aux configuration-changed)
 	   (loop ;; interval loop
 	     (with-output-to-string (output)
 	       (when show-time (output-time output))
@@ -63,7 +63,8 @@
 	       ;; +folder ==> (old new modification-time)
 	       ;; (old is not used for +inbox)
 
-	       (get-main-inbox-information spoolfile user boxes dotlock)
+	       (get-main-inbox-information spoolfile user boxes dotlock
+					   configuration-changed)
 	
 	       (let ((ninbox (second (gethash "+inbox" boxes))))
 		 (when (> ninbox 0)
@@ -72,7 +73,8 @@
 	       ;; inbox ==> (shortname longname fullname)
 	       (dolist (inbox (make-list-of-inboxes))
 		 (multiple-value-bind (old new)
-		     (get-other-inbox-information inbox boxes)
+		     (get-other-inbox-information inbox boxes
+						  configuration-changed)
 		   (let ((shortname (first inbox)))
 		     (cond ((and (> new 0) (> old 0))
 		       (format output " ~D>~A:~D" new shortname old))
@@ -90,8 +92,12 @@
 		 (finish-output)))
 
 	     (when once (return))
-      
-	     (sleep interval))))
+	     
+	     (sleep interval)
+	     
+	     ;; In case it changed
+	     (setq configuration-changed
+	       (load-user-config home :if-changed t :compile (not debug))))))
       (if* debug
 	 then (handler-bind
 		  ((error
@@ -164,7 +170,10 @@
 
 ;; Gets the new count for other inboxes as a side effect
 
-(defun get-main-inbox-information (spoolfile user boxes dotlock)
+(defun get-main-inbox-information (spoolfile user boxes dotlock
+				   ignore-cache)
+  (when ignore-cache (clrhash boxes))
+  
   (ensure-box "+inbox" boxes)
   
   (with-spool-file (f spoolfile :dotlock dotlock)
@@ -173,8 +182,9 @@
       (reset-new-count-for-boxes boxes))
     
     (when (and (streamp f) 
-	       (> (file-write-date f)
-		  (third (gethash "+inbox" boxes))))
+	       (or ignore-cache
+		   (> (file-write-date f)
+		      (third (gethash "+inbox" boxes)))))
       (reset-new-count-for-boxes boxes)
       
       (setf (third (gethash "+inbox" boxes)) (file-write-date f))
@@ -186,7 +196,8 @@
 	
 
 ;; returns oldcount and newcount.
-(defun get-other-inbox-information (inbox boxes)
+(defun get-other-inbox-information (inbox boxes ignore-cache)
+  (when ignore-cache (clrhash boxes))
   (let (old new)
     (multiple-value-bind (shortname longname fullname)
 	(values-list inbox)
@@ -196,8 +207,9 @@
       
       (setf new (second (gethash fullname boxes)))
       
-      (when (> (file-write-date longname)
-	       (third (gethash fullname boxes)))
+      (when (or ignore-cache
+		(> (file-write-date longname)
+		   (third (gethash fullname boxes))))
 	(setf (third (gethash fullname boxes)) 
 	  (file-write-date longname))
 	

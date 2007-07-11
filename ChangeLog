@@ -1,6 +1,16 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2007-07-11  Kevin Layer  <layer@gemini.franz.com>
+v1.5
+
+	* subs.cl (collect-bh-id): better heuristic for determining
+	  bh-id
+
+	* README: update
+	* mailstatus.cl: handle changed configuration
+	* subs.cl: handle changed configuration
+
 2007-05-03  Kevin Layer  <layer@relay.known.net>
 v1.4
 
