@@ -1,6 +1,29 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2007-08-09  Ahmon Dancy  <dancy@dancy>
+v1.6
+        Overall: Significant speed improvements by fixing places where
+	regular expressions were not being precompiled or where they were
+	being recompiled on a per-message basis.
+
+	* load.cl: Require :regexp2 early to make sure that the match-re
+	compiler macro is ready.
+
+	* subs.cl: Added Id line.  Added (load-time-value (compile-re
+	...)) where needed.  Changed the 'match' macro into a function.
+	The function now uses a hash table to cache already-compiled
+	regexps.  Got rid of =~word function.  It has been superseded by
+	functionality available in regexp2.  Updated the report id regexp
+	in collect-bh-id.  dispatched-to-p: replaced =~ calls with
+	match-re calls. 
+	
+        * folderfilter.cl: Added Id line to top of file.  Replaced a =~
+	with match-re.
+
+	* emailaddr.cl/lex.cl: Added (declare (optimize (speed 3))) to a
+	couple of functions to inline a "qcdr" call.
+	
 2007-07-11  Kevin Layer  <layer@gemini.franz.com>
 v1.5
 

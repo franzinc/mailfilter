@@ -1,6 +1,10 @@
 (in-package :user)
 
 (eval-when (compile load eval)
+  ;; Make sure regexp2 is ready early so that the match-re compiler
+  ;; macro is active.
+  (require :regexp2) 
+  
   (defparameter *file-list* '("lex" "emailaddr" "parse" "spool" "subs"))
   
   (defun do-compile ()

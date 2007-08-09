@@ -1,3 +1,5 @@
+;; $Id: subs.cl,v 1.20 2007/08/09 16:35:40 dancy Exp $
+
 (in-package :user)
 
 (eval-when (compile load eval)
@@ -32,7 +34,10 @@
   dispatched-to
   actions
   class)
-  
+
+(defmacro precompile-re (re)
+  `(load-time-value (compile-re ,re)))
+
 (defmacro defclassification ((infovar) &body body)
   `(defun classify-message (,infovar)
      (flet ((from-one-of (checklist)
@@ -125,7 +130,7 @@
        ((string= line "") ;; end of headers
 	(return)) ;; break from loop
        ;; Check for message that begins with "From "
-       ((and firstline (=~ "^From\\s+(\\S+)" line))
+       ((and firstline (=~ (precompile-re "^From\\s+(\\S+)") line))
 	(setf envelope-sender $1)
 	;; hack since we need the "From " leader when writing the
 	;; message out to another file
@@ -220,10 +225,17 @@
 ;; below, "exact" means full address regexp match, rather than
 ;; just matching on a piece of the address.
 
-(defmacro match (addr check-against &key case-fold)
-  `(match-re (concatenate 'string "^" ,check-against "$") ,addr
-	     :case-fold ,case-fold))
+;; This is to avoid repeated regular expression compiles.
+(defparameter *re-cache* (make-hash-table :test #'equal))
 
+(defun match (addr check-against)
+  (let ((re (gethash check-against *re-cache*)))
+    (if* (null re)
+       then (setf re (compile-re (concatenate 'string "^" check-against "$")
+				 :case-fold t :return nil))
+	    (setf (gethash check-against *re-cache*) re))
+    (match-re re addr :case-fold t :return nil)))
+    
 (defun address-matches-p (addr check-against &key domain)
   (let ((atpos-addr (position #\@ addr))
 	(atpos-check (position #\@ check-against)))
@@ -234,23 +246,21 @@
 		     check-against))
 	     ((null atpos-addr)
 	      ;; addr is unqualified, so do exact matching
-	      (match addr check-against :case-fold t))
+	      (match addr check-against))
 	     (t
 	      ;; addr is qualified, so we qualify check-against and
 	      ;; do an exact match
-	      (match addr (concatenate 'string check-against "@" domain)
-		     :case-fold t)))
+	      (match addr (concatenate 'string check-against "@" domain))))
        else (cond
 	     ;; do exact match if check-against is qualified.. 
 	     ;;  or if addr is unqualified (and, implicitly, check-against
 	     ;;   is unqualified)
 	     ((or atpos-check (null atpos-addr))
-	      (match addr check-against :case-fold t))
+	      (match addr check-against))
 	     (t
 	      ;; check-against is unqualified but addr isn't.. just check
 	      ;; the userpart
-	      (match (subseq addr 0 atpos-addr) check-against
-		     :case-fold t))))))
+	      (match (subseq addr 0 atpos-addr) check-against))))))
 	     
 
 (defun one-of-addrs-is-in-checklist-p (addrs check-list &key domain)
@@ -261,27 +271,6 @@
 		:test #'(lambda (a c)
 			  (address-matches-p a c :domain domain)))
 	(return t))))
-					
-
-;; Since there is no \b (word boundary) regexp thingy.
-(defmacro =~word (word-regexp string)
-  (if (not (stringp word-regexp))
-      (error "match-word: word-regexp should be a string"))
-  (let* ((stringvar (gensym))
-	 (nonwordchar "[^a-zA-Z0-9_]")
-	 (r1 (concatenate 'string "^" word-regexp "$"))
-	 (r2 (concatenate 'string "^" word-regexp nonwordchar))
-	 (r3 (concatenate 'string nonwordchar word-regexp "$"))
-	 (r4 (concatenate 'string nonwordchar word-regexp nonwordchar)))
-    `(block nil
-       (let ((,stringvar ,string))
-	 (if (not (stringp ,string))
-	     (return nil))
-	 (if (=~ ,r1 ,stringvar) (return t))
-	 (if (=~ ,r2 ,stringvar) (return t))
-	 (if (=~ ,r3 ,stringvar) (return t))
-	 (if (=~ ,r4 ,stringvar) (return t))
-	 nil))))
 
 (defun collect-bh-id (headers)
   (block nil
@@ -292,11 +281,11 @@
 	(return id))
       (when subj
 	;; Only trust a few types of things in the subject
-	(when (=~word "(spr[0-9]+)"   subj) (return $1))
-	(when (=~word "(bug[0-9]+)"   subj) (return $1))
-	(when (=~word "(rfe[0-9]+)"   subj) (return $1))
-	(when (=~word "(bhrfe[0-9]+)" subj) (return $1))
-	(when (=~word "(bhbug[0-9]+)" subj) (return $1))))))
+	(multiple-value-bind (found whole id)
+	    (match-re "\\b((?:spr|bug|rfe|bhrfe|bhbug)\\d+)\\b" subj)
+	  (declare (ignore whole))
+	  (if found
+	      id))))))
 
 #+ignore ;; not needed anymore
 (defun dispatched-to-p (reportid user)
@@ -457,14 +446,14 @@
   (let ((bhid (msginfo-bhid minfo))
 	(user (msginfo-user minfo)))
     (or
-     (and bhid 
-	  (=~ "^spr[0-9]+$" bhid)
+     (and bhid
+	  (match-re "^spr\\d+$" bhid :return nil)
 	  (msginfo-dispatched minfo))
      
      (and (one-of-addrs-is-in-checklist-p (msginfo-froms minfo) "handler")
 	  (one-of-addrs-is-in-checklist-p (msginfo-tos minfo) user)
 	  (msginfo-subject minfo)
-	  (=~ "^sprs\\.\\.\\." (msginfo-subject minfo)))
+	  (match-re "^sprs\\.\\.\\." (msginfo-subject minfo) :return nil))
      
      (and (msginfo-actions minfo)
 	  (member user (msginfo-actions minfo) :test #'string=)))))

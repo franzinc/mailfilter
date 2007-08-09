@@ -1,6 +1,7 @@
 (in-package :user)
 
 (defun lex-list (spec string &key (pos 0) (max (length string)))
+  (declare (optimize (speed 3)))
   (block nil
     ;; special lists
     (case (first spec)

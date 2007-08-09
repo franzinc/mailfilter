@@ -1,3 +1,5 @@
+;; $Id: folderfilter.cl,v 1.5 2007/08/09 16:35:40 dancy Exp $
+
 (in-package :user)
 
 (eval-when (compile load eval)
@@ -38,19 +40,18 @@
 	(error "Usage: ~A [-d] folder" prgname))
     
     (let ((folderdir (concat (get-mhpath home) "/" (subseq folder 1) "/"))
-	  (moves (make-hash-table :test #'equal))
-	  msgnum)
+	  (moves (make-hash-table :test #'equal)))
       (dolist (path (directory folderdir))
-	(when (=~ "^([0-9]+)$" (enough-namestring path folderdir))
-	  (setf msgnum $1)
-	  
-	  (with-spool-file (f path)
-	    (when (not (eq f :no-spool)) ;; don't try to process empty files
-	      (with-single-message (f newfolder minfo user 
-				      :msgnum (parse-integer msgnum))
-		;;(format t "msg ~A -> ~A~%" msgnum newfolder)
-		(if (string/= newfolder folder)
-		    (push msgnum (gethash newfolder moves))))))))
+	(multiple-value-bind (matched msgnum)
+	    (match-re "^\\d+$" (enough-namestring path folderdir))
+	  (when matched
+	    (with-spool-file (f path)
+	      (when (not (eq f :no-spool)) ;; don't try to process empty files
+		(with-single-message (f newfolder minfo user 
+					:msgnum (parse-integer msgnum))
+		  ;;(format t "msg ~A -> ~A~%" msgnum newfolder)
+		  (if (string/= newfolder folder)
+		      (push msgnum (gethash newfolder moves)))))))))
       
       (maphash 
        #'(lambda (newfold msgnums)

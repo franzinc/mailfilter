@@ -210,6 +210,7 @@
   (and (listp token) (eq (first token) :whitespace)))
 
 (defun some-special-token-p (token char)
+  (declare (optimize (speed 3)))
   (and (listp token) 
        (eq (first token) :special) 
        (char= char (second token))))
