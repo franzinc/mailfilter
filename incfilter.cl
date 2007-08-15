@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.15 2007/05/03 18:12:57 layer Exp $
+;; $Id: incfilter.cl,v 1.16 2007/08/15 18:08:37 dancy Exp $
 
 (in-package :user)
 
@@ -54,7 +54,7 @@
 	    (setf truncate nil)))
        (t (push (pop args) inc-args))))
     
-    (load-user-config home :compile (not debug))
+    (load-user-config home)
     
     (setf inc-args (nreverse inc-args))
     

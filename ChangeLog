@@ -1,6 +1,11 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
-
+2007-08-15  Ahmon Dancy  <dancy@dancy>
+v1.7
+        * folderfilter/incfilter/mailstatus: Remove :compile (not debug)
+	from calls to load-user-config.  For performance, we want the
+	compiled config file to be used even when in debug mode.
+	
 2007-08-09  Ahmon Dancy  <dancy@dancy>
 v1.6
         Overall: Significant speed improvements by fixing places where

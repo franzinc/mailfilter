@@ -1,4 +1,4 @@
-;; $Id: folderfilter.cl,v 1.5 2007/08/09 16:35:40 dancy Exp $
+;; $Id: folderfilter.cl,v 1.6 2007/08/15 18:08:37 dancy Exp $
 
 (in-package :user)
 
@@ -34,7 +34,7 @@
 	(setf folder (pop args)))
        (t (error "~A: Invalid argument: ~A" prgname (first args)))))
     
-    (load-user-config home :compile (not debug))
+    (load-user-config home)
     
     (if (null folder)
 	(error "Usage: ~A [-d] folder" prgname))
