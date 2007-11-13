@@ -39,9 +39,10 @@
 	(return :no-spool))
     (let ((dotlockfile (if dotlock (attempt-dotlock filename) nil))
 	  (stream (make-instance 'spool-stream
-				  :filename filename 
-				  :direction :io
-				  :if-exists :append)))
+		    :filename filename 
+		    :external-format :latin1
+		    :direction :io
+		    :if-exists :append)))
       ;;(format t "Waiting for posix lock.~%")
       (lock-stream stream :wait t)
       ;;(format t "Got posix lock.~%")

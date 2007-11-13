@@ -1,5 +1,14 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
+2007-11-12  Ahmon Dancy  <dancy@dancy>
+v1.8
+	
+	* incfilter.cl: Added -v command line argument for verbosity
+	during processing.
+
+	* incfilter.cl/spool.cl: Always operate on mbox files using
+	latin1 external format.
+
 2007-08-15  Ahmon Dancy  <dancy@dancy>
 v1.7
         * folderfilter/incfilter/mailstatus: Remove :compile (not debug)

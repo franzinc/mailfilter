@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.16 2007/08/15 18:08:37 dancy Exp $
+;; $Id: incfilter.cl,v 1.17 2007/11/13 02:32:48 dancy Exp $
 
 (in-package :user)
 
@@ -16,7 +16,7 @@
 	 (prgname (pop args))
 	 (*incorporating-mail* t)
 	 inc-args
-	 debug)
+	 debug verbose)
     (declare (ignore prgname))
     (if (null user)
 	(error "Environment variable USER is not set"))
@@ -38,6 +38,11 @@
 	    (incf debug)
 	  (setf debug 1))
 	(pop args))
+       ((string= (first args) "-v")
+	(pop args)
+	(if verbose
+	    (incf verbose)
+	  (setf verbose 1)))
        ((string= (first args) "-notruncate")
 	(setf truncate nil)
 	(pop args))
@@ -76,7 +81,7 @@
 	       (let ((tmpdir (make-temp-dir-name home)))
 		 (with-tmp-dir (tmpdir)
 		   (with-each-message (f folder minfo user)
-		     (when debug
+		     (when (or debug verbose)
 		       (format t "~D " (msginfo-num minfo))
 		       (let ((s (get-header "Subject"
 					    (msginfo-headers minfo))))
@@ -87,6 +92,7 @@
 		     (let ((tmpfile (concatenate 'string tmpdir "/" folder)))
 		       (with-open-file (out tmpfile
 					:direction :output
+					:external-format :latin1
 					:if-does-not-exist :create
 					:if-exists :append)
 			 (copy-message-to-stream f out (msginfo-headers minfo) 
@@ -103,10 +109,10 @@
 		     (dolist (folder folders)
 		       (when (not (string= folder "+inbox"))
 			 (let ((cmdvec 
-				(make-inc-cmdvec folder tmpdir
-						 "-silent" inc-args)))
+				(make-inc-cmdvec folder tmpdir inc-args
+						 :silent (not verbose))))
 
-			   (if debug
+			   (if (or debug verbose)
 			       (debugcmd cmdvec))
 		  
 			   (when (not debug)
@@ -123,11 +129,9 @@
 			 (finish-output excl::*stderr*)) ;; yeesh
 		       (return-from main))
 
-		     ;; having -truncate avoids a message about
-		     ;; the file not being zero'd.
 		     (let ((cmdvec 
-			    (make-inc-cmdvec "+inbox" tmpdir
-					     "-truncate" inc-args)))
+			    (make-inc-cmdvec "+inbox" tmpdir inc-args
+					     :truncate t)))
 
 		       (if debug
 			   (debugcmd cmdvec))
@@ -179,14 +183,15 @@
 	   (cdr (coerce vec 'list))
 	   #\space)))
 
-(defun make-inc-cmdvec (folder tmpdir mode inc-args)
-  (coerce 
-   (append 
-    (list "inc" "inc" folder "-file"
-	  (concatenate 'string tmpdir "/" folder)
-	  mode)
-    inc-args)
-   'vector))
+(defun make-inc-cmdvec (folder tmpdir inc-args &key silent truncate)
+  (let ((list (list "inc" "inc" folder 
+		    "-file" (concatenate 'string tmpdir "/" folder))))
+    (if silent
+	(setf list (nconc list (list "-silent"))))
+    (if truncate
+	(setf list (nconc list (list "-truncate"))))
+  
+    (coerce (nconc list inc-args) 'vector)))
 
 (defun logentry (stream minfo folder)
   (format stream "~A:~A:~A:~A~%"
