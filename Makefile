@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.14 2007/07/11 22:47:26 layer Exp $
+# $Id: Makefile,v 1.15 2007/11/13 21:12:03 dancy Exp $
 
 at_franz = $(shell if test -d /fi/cl/8.1/acl; then echo t; else echo nil; fi)
 
@@ -90,4 +90,4 @@ REPODIR=/storage1/franz/$(ARCH)
 install-repo:
 	ssh root@$(REPOHOST) "rm -f $(REPODIR)/$(name)-*"
 	scp RPMS/$(ARCH)/$(name)-$(version)-*.rpm root@$(REPOHOST):$(REPODIR)
-	ssh root@$(REPOHOST) "createrepo -q $(REPODIR)"
+	ssh root@$(REPOHOST) "createrepo --update -q $(REPODIR)"
