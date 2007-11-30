@@ -1,5 +1,14 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
+
+2007-11-30  Kevin Layer  <layer@gemini.franz.com>
+v1.9
+
+	* subs.cl: split msginfo `tos' into `to' and `cc' and given
+	  to-one-of an optional argument that is the `recips' to
+	  search.  This allows for discrimination on whether a
+	  particular address is in the To: or Cc:.
+
 2007-11-12  Ahmon Dancy  <dancy@dancy>
 v1.8
 	

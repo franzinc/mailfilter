@@ -1,4 +1,4 @@
-;; $Id: subs.cl,v 1.20 2007/08/09 16:35:40 dancy Exp $
+;; $Id: subs.cl,v 1.21 2007/11/30 18:24:22 layer Exp $
 
 (in-package :user)
 
@@ -26,7 +26,9 @@
   user
   headers
   bodylines
-  tos
+  to
+  cc
+  recips
   froms
   subject
   bhid
@@ -43,13 +45,15 @@
      (flet ((from-one-of (checklist)
 	      (one-of-addrs-is-in-checklist-p (msginfo-froms minfo)
 					      checklist))
-	    (to-one-of (checklist)
-	      (one-of-addrs-is-in-checklist-p (msginfo-tos minfo)
-					      checklist))
-	    (to-one-of-domain (domain-regexp checklist)
-	      (one-of-addrs-is-in-checklist-p (msginfo-tos minfo)
-					      checklist
-					      :domain domain-regexp))
+	    (to-one-of (checklist &optional recips)
+	      (one-of-addrs-is-in-checklist-p
+	       (or recips (msginfo-recips minfo))
+	       checklist))
+	    (to-one-of-domain (domain-regexp checklist &optional recips)
+	      (one-of-addrs-is-in-checklist-p
+	       (or recips (msginfo-recips minfo))
+	       checklist
+	       :domain domain-regexp))
 	    (add-header (name value)
 	      (setf (msginfo-headers minfo)
 		(nconc (msginfo-headers minfo) 
@@ -188,18 +192,14 @@
 	(values headers 
 		bodylines
 		froms
-		(get-header-recips headers))))))
+		(get-header-recips headers "To")
+		(get-header-recips headers "Cc"))))))
 
 
-(defun get-header-recips (headers)
-  (let (res)
-    (dolist (header headers)
-      (if (or (equalp (car header) "To")
-	      (equalp (car header) "Cc"))
-	  (setf res (nconc 
-		     res
-		     (get-addr-list (unfold-header (cdr header)))))))
-    res))
+(defun get-header-recips (headers what &aux (res '()))
+  (dolist (header headers res)
+    (when (equalp (car header) what)
+      (setq res (nconc res (get-addr-list (unfold-header (cdr header))))))))
 
 (defun unfold-header (h)
   (setf h (delete #\newline h)))
@@ -365,13 +365,14 @@
 	(froms (gensym))
 	(dispatched-to (gensym))
 	(actions (gensym))
-	(tos (gensym)))
+	(to (gensym))
+	(cc (gensym)))
     `(let ((,spoolstreamvar ,spoolstream)
 	   (,uservar ,user)
 	   (,msgnum (1- ,initial-msgnum)))
        (loop
 	 (incf ,msgnum)
-	 (multiple-value-bind (,headers ,bodylines ,froms ,tos)
+	 (multiple-value-bind (,headers ,bodylines ,froms ,to ,cc)
 	     (scan-message ,spoolstreamvar :maxbodylines *body-lines-to-read*)
 	   (if (null ,headers) ;; end of spool
 	       (return)) 
@@ -381,7 +382,10 @@
 		   :stream ,spoolstreamvar
 		   :num ,msgnum
 		   :headers ,headers :bodylines ,bodylines
-		   :tos ,tos :froms ,froms
+		   :to ,to
+		   :cc ,cc
+		   :recips (append ,to ,cc)
+		   :froms ,froms
 		   :subject (get-header "Subject" ,headers)
 		   :bhid (collect-bh-id ,headers)
 		   :class (get-header "Class" ,headers))))
@@ -451,7 +455,7 @@
 	  (msginfo-dispatched minfo))
      
      (and (one-of-addrs-is-in-checklist-p (msginfo-froms minfo) "handler")
-	  (one-of-addrs-is-in-checklist-p (msginfo-tos minfo) user)
+	  (one-of-addrs-is-in-checklist-p (msginfo-recips minfo) user)
 	  (msginfo-subject minfo)
 	  (match-re "^sprs\\.\\.\\." (msginfo-subject minfo) :return nil))
      
