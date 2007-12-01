@@ -4,6 +4,7 @@
 2007-11-30  Kevin Layer  <layer@gemini.franz.com>
 v1.10
 
+	* load.cl: add version.cl to file list
 	* incfilter.cl: message number to log file
 
 2007-11-30  Kevin Layer  <layer@gemini.franz.com>

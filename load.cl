@@ -5,7 +5,8 @@
   ;; macro is active.
   (require :regexp2) 
   
-  (defparameter *file-list* '("lex" "emailaddr" "parse" "spool" "subs"))
+  (defparameter *file-list* '("version" "lex" "emailaddr" "parse" "spool"
+			      "subs"))
   
   (defun do-compile ()
     (let ((excl::*break-on-warnings* t))
@@ -25,9 +26,3 @@
       (list :regexp2 :shell :trace))
      :include-compiler t
      :runtime :dynamic)))
-
-
-
-
-
-
