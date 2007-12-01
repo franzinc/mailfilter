@@ -2,6 +2,11 @@
 **** (please leave this header at the top of the file) ****
 
 2007-11-30  Kevin Layer  <layer@gemini.franz.com>
+v1.10
+
+	* incfilter.cl: message number to log file
+
+2007-11-30  Kevin Layer  <layer@gemini.franz.com>
 v1.9
 
 	* subs.cl: split msginfo `tos' into `to' and `cc' and given

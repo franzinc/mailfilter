@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.17 2007/11/13 02:32:48 dancy Exp $
+;; $Id: incfilter.cl,v 1.18 2007/12/01 02:35:22 layer Exp $
 
 (in-package :user)
 
@@ -194,9 +194,10 @@
     (coerce (nconc list inc-args) 'vector)))
 
 (defun logentry (stream minfo folder)
-  (format stream "~A:~A:~A:~A~%"
+  (format stream "~A:~A:~A:~A:~A~%"
 	  (ctime) 
 	  (list-to-delimited-string (msginfo-froms minfo) #\,)
 	  (get-header "Message-Id" (msginfo-headers minfo) :null-string t)
-	  folder)
+	  folder
+	  (msginfo-num minfo))
   (finish-output stream))
