@@ -1,4 +1,4 @@
-;; $Id: subs.cl,v 1.21 2007/11/30 18:24:22 layer Exp $
+;; $Id: subs.cl,v 1.22 2007/12/10 23:02:07 dancy Exp $
 
 (in-package :user)
 
@@ -19,6 +19,12 @@
 (defparameter *mailstatus-inbox-folder-order* nil)
 ;; used by incfilter.   
 (defparameter *logfilename* "~/incfilter.log") 
+;; Debugging option.  If set, it should be a string representing the 
+;; path to an existing directory where files will be saved
+(defparameter *save-spools* nil)
+;; If true, log more information into *logfilename* during normal
+;; operation.
+(defparameter *verbose-logging* nil)
 
 (defstruct msginfo
   num
@@ -461,3 +467,10 @@
      
      (and (msginfo-actions minfo)
 	  (member user (msginfo-actions minfo) :test #'string=)))))
+
+(defun make-timestamped-filename (dir basename)
+  (format nil "~a/~a.~a" 
+	  dir
+	  basename
+	  (locale-format-time nil (get-universal-time) nil nil nil "%Y-%m-%d-%H:%M:%S")))
+

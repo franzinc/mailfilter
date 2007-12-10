@@ -1,6 +1,11 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2007-12-10  Ahmon Dancy  <dancy@dancy>
+v1.11	
+	* subs.cl/lincfilter.cl: Added additional debugging and logging
+	support.  
+
 2007-11-30  Kevin Layer  <layer@gemini.franz.com>
 v1.10
 

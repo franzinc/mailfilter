@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.18 2007/12/01 02:35:22 layer Exp $
+;; $Id: incfilter.cl,v 1.19 2007/12/10 23:02:07 dancy Exp $
 
 (in-package :user)
 
@@ -11,6 +11,7 @@
   (let* ((user (getenv "USER"))
 	 (home (getenv "HOME"))
 	 (spoolfile (guess-spool-filename user))
+	 (inputfile spoolfile)
 	 (dotlock t)
 	 (truncate :unset)
 	 (prgname (pop args))
@@ -53,7 +54,7 @@
 	(pop args)
 	(if (null args)
 	    (error "inc: missing argument to -file"))
-	(setf spoolfile (pop args))
+	(setf inputfile (pop args))
 	(setf dotlock nil)
 	(if (eq truncate :unset)
 	    (setf truncate nil)))
@@ -72,12 +73,23 @@
 			    :direction :output
 			    :if-exists :always-append
 			    :if-does-not-exist :always-append)
-	     (with-spool-file (f spoolfile :dotlock dotlock)
+	     (if *verbose-logging*
+		 (logmsg logfile "incfilter started."))
+	     (with-spool-file (f inputfile :dotlock dotlock)
 	       (when (eq f :no-spool)
+		 (if *verbose-logging*
+		     (logmsg logfile "No mail to incorporate. Terminating."))
 		 (write-line "inc: no mail to incorporate" excl::*stderr*)
 		 (finish-output excl::*stderr*) ;; yeesh
 		 (return-from main))
 
+	       (when (and *save-spools* (not debug) (eq inputfile spoolfile))
+		 (let ((copyfilename (make-timestamped-filename *save-spools* "spool")))
+		   (logmsg logfile "Making copy of ~a to ~a" 
+			   inputfile copyfilename)
+		   (ensure-directories-exist *save-spools*)
+		   (sys:copy-file inputfile copyfilename)))
+	       
 	       (let ((tmpdir (make-temp-dir-name home)))
 		 (with-tmp-dir (tmpdir)
 		   (with-each-message (f folder minfo user)
@@ -111,19 +123,22 @@
 			 (let ((cmdvec 
 				(make-inc-cmdvec folder tmpdir inc-args
 						 :silent (not verbose))))
-
 			   (if (or debug verbose)
 			       (debugcmd cmdvec))
-		  
+			   (if *verbose-logging*
+			       (debugcmd cmdvec logfile))
+
 			   (when (not debug)
 			     (if (/= 0 (run-shell-command cmdvec :wait t))
 				 (error "inc ~A exited w/ non-zero status"
 					folder))))))
-
+		     
 		     (when (not (member "+inbox" folders :test #'string=))
 		       (when (not debug)
 			 (if truncate
 			     (os-truncate f 0))
+			 (if *verbose-logging*
+			     (logmsg logfile "incfilter terminating."))
 			 (write-line "inc: no mail to incorporate"
 				     excl::*stderr*)
 			 (finish-output excl::*stderr*)) ;; yeesh
@@ -135,16 +150,18 @@
 
 		       (if debug
 			   (debugcmd cmdvec))
+		       (if *verbose-logging*
+			   (debugcmd cmdvec logfile))
 	      
 		       (when (not debug)
 			 (if (/= 0 (run-shell-command cmdvec :wait t))
 			     (error "inc +inbox exited w/ non-zero status"))
 		
 			 (if* (not truncate)
-			    then
-				 (format t "~A not zero'd~%" spoolfile)
-			    else
-				 (os-truncate f 0)))))))))))
+			    then (format t "~A not zero'd~%" inputfile)
+			    else (os-truncate f 0))
+			 (if *verbose-logging*
+			     (logmsg logfile "incfilter terminating.")))))))))))
       (if* debug
 	 then (handler-bind
 		  ((error
@@ -177,11 +194,12 @@
     (mapcar #'(lambda (x) (enough-namestring x btmpdir))
 	    (directory btmpdir))))
   
-(defun debugcmd (vec)
-  (format t "debug: ~A~%"
+(defun debugcmd (vec &optional (stream t))
+  (format stream "debug: ~A~%"
 	  (list-to-delimited-string 
 	   (cdr (coerce vec 'list))
-	   #\space)))
+	   #\space))
+  (finish-output stream))
 
 (defun make-inc-cmdvec (folder tmpdir inc-args &key silent truncate)
   (let ((list (list "inc" "inc" folder 
@@ -190,7 +208,12 @@
 	(setf list (nconc list (list "-silent"))))
     (if truncate
 	(setf list (nconc list (list "-truncate"))))
-  
+    (if *verbose-logging*
+  	(setf list 
+	  (nconc 
+	   list 
+	   (list "-audit" 
+		 (namestring (translate-logical-pathname *logfilename*))))))
     (coerce (nconc list inc-args) 'vector)))
 
 (defun logentry (stream minfo folder)
@@ -200,4 +223,11 @@
 	  (get-header "Message-Id" (msginfo-headers minfo) :null-string t)
 	  folder
 	  (msginfo-num minfo))
+  (finish-output stream))
+
+(defun logmsg (stream format &rest args)
+  (write-string (excl.osi:ctime) stream)
+  (write-string ": " stream)
+  (apply #'format stream format args)
+  (terpri stream)
   (finish-output stream))
