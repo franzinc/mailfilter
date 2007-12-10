@@ -6,6 +6,11 @@ v1.11
 	* subs.cl/lincfilter.cl: Added additional debugging and logging
 	support.  
 
+	* subs.cl: Added (declare (ignorable #'from-one-of #'to-one-if
+			   #'to-one-of-domain #'add-header))
+	           to the classify-message function within the 
+	           defclassification macro.
+
 2007-11-30  Kevin Layer  <layer@gemini.franz.com>
 v1.10
 
