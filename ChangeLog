@@ -1,6 +1,11 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2008-01-08  Ahmon Dancy  <dancy@dancy>
+v1.12
+	* subs.cl: [sa816] Added 'check-for-spr-references' keyword
+	arg to message-is-my-spr-p.
+
 2007-12-10  Ahmon Dancy  <dancy@dancy>
 v1.11	
 	* subs.cl/lincfilter.cl: Added additional debugging and logging

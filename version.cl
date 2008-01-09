@@ -1,5 +1,5 @@
-;; $Id: version.cl,v 1.12 2007/12/10 23:02:07 dancy Exp $
+;; $Id: version.cl,v 1.13 2008/01/09 00:02:56 dancy Exp $
 
 (in-package :user)
 
-(defparameter *mailfilter-version* "1.11")
+(defparameter *mailfilter-version* "1.12")

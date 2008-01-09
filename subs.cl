@@ -1,4 +1,4 @@
-;; $Id: subs.cl,v 1.23 2007/12/10 23:13:55 dancy Exp $
+;; $Id: subs.cl,v 1.24 2008/01/09 00:02:56 dancy Exp $
 
 (in-package :user)
 
@@ -41,7 +41,8 @@
   dispatched
   dispatched-to
   actions
-  class)
+  class
+  references)
 
 (defmacro precompile-re (re)
   `(load-time-value (compile-re ,re)))
@@ -295,32 +296,23 @@
 	  (if found
 	      id))))))
 
-#+ignore ;; not needed anymore
-(defun dispatched-to-p (reportid user)
-  (mp:with-timeout (*http-timeout* (error "bh.franz.com unresponsive")) 
-    (let ((res 
-	   (do-http-request 
-	       (format
-		nil 
-		"http://bh.franz.com/dispatched-to-p?reportid=~a&user=~a"
-		(net.aserve:uriencode-string reportid)
-		(net.aserve:uriencode-string user)))))
-      (string= res "t"))))
-
 (defun dispatched-to (reportid)
   (mp:with-timeout (*http-timeout* (error "bh.franz.com unresponsive")) 
     (multiple-value-bind (res code)
 	(do-http-request 
 	    (format nil 
-		    "http://bh.franz.com/dispatched-to?reportid=~a"
+		    "http://bh.franz.com/getinfo?reportid=~a"
 		    (net.aserve:uriencode-string reportid)))
-      (if* (and (eql code 200)
-		(stringp res)
-		(string/= "" res))
-	 then (destructuring-bind (dispatched-to actions)
-		  (read-from-string res)
-		(values dispatched-to actions))
-	 else nil))))
+      (when (and (eql code 200)
+		 (stringp res)
+		 (string/= "" res))
+	;; Don't use destructuring-bind here since /getinfo is documented
+	;; to possible return more entries in the list in the future.
+	(let ((info (read-from-string res)))
+	  (values (first info)		; dispatched-to
+		  (second info)		; open actions list 
+		  (third info)))))))	; references information 
+	
 
 (defun clean-msgid (msgid)
   (string-trim '(#\newline #\return #\space #\tab) msgid))
@@ -373,6 +365,7 @@
 	(froms (gensym))
 	(dispatched-to (gensym))
 	(actions (gensym))
+	(references (gensym))
 	(to (gensym))
 	(cc (gensym)))
     `(let ((,spoolstreamvar ,spoolstream)
@@ -399,13 +392,14 @@
 		   :class (get-header "Class" ,headers))))
 	     
 	     (when (and *track-dispatches* (msginfo-bhid ,minfovar))
-	       (multiple-value-bind (,dispatched-to ,actions)
+	       (multiple-value-bind (,dispatched-to ,actions ,references)
 		   (dispatched-to (msginfo-bhid ,minfovar))
 		 (setf (msginfo-dispatched-to ,minfovar) ,dispatched-to)
 		 (setf (msginfo-actions ,minfovar) ,actions)
 		 (setf (msginfo-dispatched ,minfovar)
 		   (and ,dispatched-to
-			(string= ,uservar ,dispatched-to)))))
+			(string= ,uservar ,dispatched-to)))
+		 (setf (msginfo-references ,minfovar) ,references)))
 	     
 	     #+ignore
 	     (let ((,classificationvar 
@@ -454,7 +448,16 @@
 	 ;; cleanup
 	 (delete-directory-and-files ,dirsym :if-does-not-exist :ignore)))))
 
-(defun message-is-my-spr-p (minfo)
+;; refs is a list of conses where the car is the report id and the cdr
+;; is a list of (dispatched-to open-action-user1 open-action-user2 ...)
+(defun one-of-references-is-my-spr (refs user)
+  (dolist (ref refs)
+    (let ((reportid (car ref)))
+      (if (and (match-re "^spr" reportid)
+	       (member user (cdr ref) :test #'string=))
+	  (return reportid)))))
+
+(defun message-is-my-spr-p (minfo &key check-for-spr-references)
   (let ((bhid (msginfo-bhid minfo))
 	(user (msginfo-user minfo)))
     (or
@@ -468,7 +471,10 @@
 	  (match-re "^sprs\\.\\.\\." (msginfo-subject minfo) :return nil))
      
      (and (msginfo-actions minfo)
-	  (member user (msginfo-actions minfo) :test #'string=)))))
+	  (member user (msginfo-actions minfo) :test #'string=))
+     
+     (and check-for-spr-references
+	  (one-of-references-is-my-spr (msginfo-references minfo) user)))))
 
 (defun make-timestamped-filename (dir basename)
   (format nil "~a/~a.~a" 
