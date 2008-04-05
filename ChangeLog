@@ -1,6 +1,13 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2008-04-05  Kevin Layer  <layer@gemini.franz.com>
+v1.13
+
+	* subs.cl: don't make sure message-is-my-spr-p doesn't return
+	  a non-nil value for anything bug sprs.  Don't want bugs/rfes
+	  being mis-identified.
+
 2008-01-08  Ahmon Dancy  <dancy@dancy>
 v1.12
 	* subs.cl: [sa816] Added 'check-for-spr-references' keyword

@@ -1,4 +1,4 @@
-;; $Id: subs.cl,v 1.24 2008/01/09 00:02:56 dancy Exp $
+;; $Id: subs.cl,v 1.25 2008/04/05 22:39:40 layer Exp $
 
 (in-package :user)
 
@@ -453,16 +453,17 @@
 (defun one-of-references-is-my-spr (refs user)
   (dolist (ref refs)
     (let ((reportid (car ref)))
-      (if (and (match-re "^spr" reportid)
-	       (member user (cdr ref) :test #'string=))
-	  (return reportid)))))
+      (when (and (match-re "^spr" reportid)
+		 (member user (cdr ref) :test #'string=))
+	(return reportid)))))
 
 (defun message-is-my-spr-p (minfo &key check-for-spr-references)
   (let ((bhid (msginfo-bhid minfo))
 	(user (msginfo-user minfo)))
+    (when (and bhid (not (match-re "^spr\\d+$" bhid :return nil)))
+      (return-from message-is-my-spr-p nil))
     (or
      (and bhid
-	  (match-re "^spr\\d+$" bhid :return nil)
 	  (msginfo-dispatched minfo))
      
      (and (one-of-addrs-is-in-checklist-p (msginfo-froms minfo) "handler")
@@ -480,5 +481,5 @@
   (format nil "~a/~a.~a" 
 	  dir
 	  basename
-	  (locale-format-time nil (get-universal-time) nil nil nil "%Y-%m-%d-%H:%M:%S")))
-
+	  (locale-format-time
+	   nil (get-universal-time) nil nil nil "%Y-%m-%d-%H:%M:%S")))
