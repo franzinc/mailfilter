@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.12 2008/12/12 06:19:09 layer Exp $
+;; $Id: mailstatus.cl,v 1.13 2008/12/12 06:20:14 layer Exp $
 
 (in-package :user)
 
@@ -52,7 +52,7 @@
 	(setf show-unread t))
        ((string= (first args) "-p")
 	(pop args)
-	(setf print-separators t))
+	(setf print-separators #\,))
        ((string= (first args) "-file")
 	(pop args)
 	(when (null args)
@@ -155,13 +155,13 @@
 (defun print-long-summary (s name print-separators new unread old)
   (format s "+~15a~@[~c~]~10a~@[~c~]~13a~@[~c~]~10a~%"
 	  name
-	  (when print-separators #\null)
+	  print-separators
 	  (if (> new 0) (format nil "~3d new" new) "")
-	  (when print-separators #\null)
+	  print-separators
 	  (if (> unread 0)
 	      (format nil "~3d unread" unread)
 	    "")
-	  (when print-separators #\null)
+	  print-separators
 	  (if (> old 0) (format nil "~4d old" old) "")))
 
 (defun ensure-box (box boxes)
