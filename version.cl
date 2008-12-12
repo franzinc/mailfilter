@@ -1,5 +1,5 @@
-;; $Id: version.cl,v 1.14 2008/04/05 22:39:40 layer Exp $
+;; $Id: version.cl,v 1.15 2008/12/12 06:23:59 layer Exp $
 
 (in-package :user)
 
-(defparameter *mailfilter-version* "1.13")
+(defparameter *mailfilter-version* "1.14")
