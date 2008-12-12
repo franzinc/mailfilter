@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.13 2008/12/12 06:20:14 layer Exp $
+;; $Id: mailstatus.cl,v 1.14 2008/12/12 06:22:30 layer Exp $
 
 (in-package :user)
 
@@ -159,7 +159,7 @@
 	  (if (> new 0) (format nil "~3d new" new) "")
 	  print-separators
 	  (if (> unread 0)
-	      (format nil "~3d unread" unread)
+	      (format nil "~4d unread" unread)
 	    "")
 	  print-separators
 	  (if (> old 0) (format nil "~4d old" old) "")))
@@ -195,7 +195,8 @@
 (defun sort-inboxes (inboxes)
   (let (sorted entry sort-order)
     (setq sort-order (if* *long*
-			then *mailstatus-long-format*
+			then (or *mailstatus-long-format*
+				 *mailstatus-inbox-folder-order*)
 			else *mailstatus-inbox-folder-order*))
     (setq inboxes (sort inboxes #'string< :key #'first))
     (dolist (inbox sort-order)
