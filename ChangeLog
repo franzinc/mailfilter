@@ -3,6 +3,12 @@
 
 2008-12-11  Kevin Layer  <layer@gemini.franz.com>
 
+	* mailstatus.cl: add -l (long output), -u (show unread msgs),
+          -p (print separators in w/-l) command line arguments
+	* subs.cl: new variable: *mailstatus-long-format* 
+
+2008-12-11  Kevin Layer  <layer@gemini.franz.com>
+
 	* mailfilter.spec: add debug_package so the debuginfo package
 	  isn't made (don't remember why this was needed but Ahmon
 	  told me to do it to get around some problem)

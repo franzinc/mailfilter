@@ -1,6 +1,8 @@
-;; $Id: mailstatus.cl,v 1.11 2007/08/15 18:08:37 dancy Exp $
+;; $Id: mailstatus.cl,v 1.12 2008/12/12 06:19:09 layer Exp $
 
 (in-package :user)
+
+(defvar *long* nil)
 
 (defun main (&rest args)
   (let* ((user (getenv "USER"))
@@ -10,7 +12,7 @@
 	 (prgname (pop args))
 	 (interval 30) ;; seconds
 	 (boxes (make-hash-table :test #'equal))
-	 show-time once debug)
+	 show-time once debug long show-unread print-separators)
     (if (null user)
 	(error "Environment variable USER is not set"))
     (if (null home)
@@ -40,6 +42,17 @@
        ((string= (first args) "-d")
 	(pop args)
 	(setf debug t))
+       ((string= (first args) "-l")
+	(pop args)
+	(setf long t)
+	(setf *long* t)
+	(setf once t))
+       ((string= (first args) "-u")
+	(pop args)
+	(setf show-unread t))
+       ((string= (first args) "-p")
+	(pop args)
+	(setf print-separators t))
        ((string= (first args) "-file")
 	(pop args)
 	(when (null args)
@@ -53,7 +66,7 @@
     ;; bleh
     (setf *default-pathname-defaults* (pathname (chdir (get-mhpath home))))
 
-    (flet
+    (labels
 	((doit (&aux configuration-changed)
 	   (loop ;; interval loop
 	     (with-output-to-string (output)
@@ -66,20 +79,30 @@
 	       (get-main-inbox-information spoolfile user boxes dotlock
 					   configuration-changed)
 	
-	       (let ((ninbox (second (gethash "+inbox" boxes))))
-		 (when (> ninbox 0)
-		   (format output " ~D+" ninbox)))
+	       (let* ((info (gethash "+inbox" boxes))
+		      (oinbox (first info))
+		      (ninbox (second info))
+		      (uinbox (count-unread-messages "inbox/.mh_sequences")))
+		 (if* long
+		    then (print-long-summary output "inbox"
+					     print-separators
+					     ninbox uinbox oinbox)
+		  elseif (> ninbox 0)
+		    then (format output " ~D+" ninbox)))
 	
 	       ;; inbox ==> (shortname longname fullname)
 	       (dolist (inbox (make-list-of-inboxes))
-		 (multiple-value-bind (old new)
+		 (multiple-value-bind (old new unread)
 		     (get-other-inbox-information inbox boxes
 						  configuration-changed)
-		   (let ((shortname (first inbox)))
-		     (cond ((and (> new 0) (> old 0))
-		       (format output " ~D>~A:~D" new shortname old))
-		      ((> new 0) (format output " ~D>~A" new shortname))
-		      ((> old 0) (format output " ~A:~D" shortname old))))))
+		   (when (> (+ old new unread) 0)
+		     (if* long
+			then (print-long-summary output (second inbox)
+						 print-separators
+						 new unread old)
+			else (print-short-summary output (first inbox)
+						  show-unread new unread
+						  old)))))
 
 	       (let ((string (get-output-stream-string output)))
 		 (when (string= "" string)
@@ -120,6 +143,27 @@
 		(doit))
 	 else (doit)))))
 
+(defun print-short-summary (s name show-unread new unread old)
+  (cond ((and (> new 0) (> old 0))
+	 (format s " ~D>~A:~D~@[[~a]~]" new name old
+		 (when (and show-unread (> unread 0)) unread)))
+	((> new 0) (format s " ~D>~A" new name))
+	((> old 0)
+	 (format s " ~A:~D~@[[~a]~]" name old
+		 (when (and show-unread (> unread 0)) unread)))))
+
+(defun print-long-summary (s name print-separators new unread old)
+  (format s "+~15a~@[~c~]~10a~@[~c~]~13a~@[~c~]~10a~%"
+	  name
+	  (when print-separators #\null)
+	  (if (> new 0) (format nil "~3d new" new) "")
+	  (when print-separators #\null)
+	  (if (> unread 0)
+	      (format nil "~3d unread" unread)
+	    "")
+	  (when print-separators #\null)
+	  (if (> old 0) (format nil "~4d old" old) "")))
+
 (defun ensure-box (box boxes)
   (if (null (gethash box boxes))
       (zero-box box boxes)))
@@ -149,14 +193,17 @@
     (sort-inboxes inboxes)))
 
 (defun sort-inboxes (inboxes)
-  (let (sorted entry)
-    (dolist (inbox *mailstatus-inbox-folder-order*)
+  (let (sorted entry sort-order)
+    (setq sort-order (if* *long*
+			then *mailstatus-long-format*
+			else *mailstatus-inbox-folder-order*))
+    (setq inboxes (sort inboxes #'string< :key #'first))
+    (dolist (inbox sort-order)
       (when (setf entry (find inbox inboxes :key #'first :test #'string=))
 	(push entry sorted)
 	(setf inboxes 
 	  (delete inbox inboxes :key #'first :test #'string=))))
-
-    (nconc (nreverse sorted)  (sort inboxes #'string< :key #'first))))
+    (nconc (nreverse sorted) inboxes)))
 
 (defun output-time (stream)
   (multiple-value-bind (sec min hour)
@@ -187,6 +234,11 @@
 		      (third (gethash "+inbox" boxes)))))
       (reset-new-count-for-boxes boxes)
       
+      (setf (first (gethash "+inbox" boxes))
+	  (count-if (lambda (p)
+		      (match-re "/[0-9]+$" (enough-namestring p)))
+		    (directory "inbox/")))
+      
       (setf (third (gethash "+inbox" boxes)) (file-write-date f))
       
       (with-each-message (f box minfo user)
@@ -198,10 +250,11 @@
 ;; returns oldcount and newcount.
 (defun get-other-inbox-information (inbox boxes ignore-cache)
   (when ignore-cache (clrhash boxes))
-  (let (old new)
-    (multiple-value-bind (shortname longname fullname)
-	(values-list inbox)
+  (let (dir old new unread)
+    (destructuring-bind (shortname longname fullname) inbox
       (declare (ignore shortname))
+      
+      (setq dir (concatenate 'string longname "/"))
       
       (ensure-box fullname boxes)
       
@@ -216,7 +269,41 @@
 	(setf (first (gethash fullname boxes))
 	  (count-if (lambda (p)
 		      (match-re "/[0-9]+$" (enough-namestring p)))
-		    (directory (concatenate 'string longname "/")))))
+		    (directory dir))))
+      
+      (setq unread
+	(count-unread-messages (merge-pathnames ".mh_sequences" dir)))
       
       (setf old (first (gethash fullname boxes))))
-    (values old new)))
+    (values old new unread)))
+
+(defun count-unread-messages (mh-seq &aux (unread 0))
+  (dolist (unseen (retrieve-unseen-sequence mh-seq) unread)
+    (incf unread (count-range unseen))))
+
+(defun retrieve-unseen-sequence (file)
+  (when (probe-file file)
+    (with-open-file (s file :direction :input)
+      (let (line)
+	(loop
+	  (setq line (read-line s nil s))
+	  (when (eq s line) (return))
+	  (multiple-value-bind (found ignore1 seq)
+	      (match-re "^unseen: (.*)$" line)
+	    (declare (ignore ignore1))
+	    (when found
+	      (return (delimited-string-to-list seq #\space)))))))))
+
+(defun count-range (string)
+  (multiple-value-bind (found ignore1 start ignore2 end)
+      (match-re "^([0-9]+)(-([0-9]+))?$" string)
+    (declare (ignore ignore1 ignore2))
+    (when found
+      (setq start (parse-integer start))
+      (if* end
+	 then (setq end (parse-integer end))
+	      (1+ (- end start))
+	 else 1))))
+      
+
+		    

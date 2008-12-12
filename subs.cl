@@ -1,4 +1,4 @@
-;; $Id: subs.cl,v 1.25 2008/04/05 22:39:40 layer Exp $
+;; $Id: subs.cl,v 1.26 2008/12/12 06:19:09 layer Exp $
 
 (in-package :user)
 
@@ -17,6 +17,7 @@
 (defparameter *inbox-regexp* "^inbox-(.*)") 
 ;; used by mailstatus
 (defparameter *mailstatus-inbox-folder-order* nil)
+(defparameter *mailstatus-long-format* nil)
 ;; used by incfilter.   
 (defparameter *logfilename* "~/incfilter.log") 
 ;; Debugging option.  If set, it should be a string representing the 
