@@ -8,6 +8,9 @@ Group: Applications/Internet
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
+# Don't attempt to make the debuginfo package
+%define debug_package %{nil}
+
 %description
 
 mailstatus, folderfilter, and incfilter.  

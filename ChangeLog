@@ -1,6 +1,12 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2008-12-11  Kevin Layer  <layer@gemini.franz.com>
+
+	* mailfilter.spec: add debug_package so the debuginfo package
+	  isn't made (don't remember why this was needed but Ahmon
+	  told me to do it to get around some problem)
+
 2008-04-05  Kevin Layer  <layer@gemini.franz.com>
 v1.13
 
