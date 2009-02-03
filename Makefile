@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.15 2007/11/13 21:12:03 dancy Exp $
+# $Id: Makefile,v 1.16 2009/02/03 21:27:42 elliott Exp $
 
 at_franz = $(shell if test -d /fi/cl/8.1/acl; then echo t; else echo nil; fi)
 
@@ -84,8 +84,7 @@ rpm:    tarball
 
 
 REPOHOST=fs1
-REPODIR=/storage1/franz/$(ARCH)
-
+REPODIR=/storage1/franz/common/$(ARCH)
 
 install-repo:
 	ssh root@$(REPOHOST) "rm -f $(REPODIR)/$(name)-*"
