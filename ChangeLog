@@ -1,6 +1,12 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2009-02-03  Elliott Johnson  <elliott@gemini.franz.com>
+v1.15
+
+	* subs.cl: corrected a typo.  to-one-if -> to-one-of
+
+	
 2008-12-11  Kevin Layer  <layer@gemini.franz.com>
 v1.14
 

@@ -1,4 +1,4 @@
-;; $Id: subs.cl,v 1.26 2008/12/12 06:19:09 layer Exp $
+;; $Id: subs.cl,v 1.27 2009/02/03 21:15:24 elliott Exp $
 
 (in-package :user)
 
@@ -66,7 +66,7 @@
 	      (setf (msginfo-headers minfo)
 		(nconc (msginfo-headers minfo) 
 		       (list (cons name value))))))
-       (declare (ignorable #'from-one-of #'to-one-if #'to-one-of-domain
+       (declare (ignorable #'from-one-of #'to-one-of #'to-one-of-domain
 			   #'add-header))
        ;; putting these into a macrolet allows the the regexps to be
        ;; compiled at the time the .mailfilter.cl is compiled.
