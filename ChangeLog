@@ -1,6 +1,12 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2009-02-14  Elliott Johnson <elliott@gemini.franz.com>
+v1.16
+
+	* mailstatus.cl: Added a help menu.  I also added a
+		mechanism to register command line options.
+	
 2009-02-03  Elliott Johnson  <elliott@gemini.franz.com>
 v1.15
 

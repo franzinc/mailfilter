@@ -1,10 +1,61 @@
-;; $Id: mailstatus.cl,v 1.14 2008/12/12 06:22:30 layer Exp $
+;; $Id: mailstatus.cl,v 1.15 2009/02/21 18:34:57 elliott Exp $
 
 (in-package :user)
 
 (defvar *long* nil)
 
+(defvar *command-line-options*
+  ()
+  "A table of actions to use for a given command line option.")
+
+(defstruct command-line-option ()
+  ;; Documentation to display.
+  (description "undocumented feature." :type string)
+  ;; The name of an argument this option accepts
+  (argument nil :type (or null string))
+  ;; An action that'll be funcalled when the option is specified.
+  ;;   Value can be a function that is funcalled or a string,
+  ;;   which acts as an alias to another option.
+  (action "-h" :type (or function string)))
+ 
+(defun display-help ()
+  (format t "usage: mailstatus [options]~%~%")
+  (format t "options:~%")
+  (loop for arg being the hash-keys in 
+	*command-line-options*
+	using (hash-value option)
+	do (format t 
+		   "~2T~A~@[ ~A~]~20T~A~%" 
+		   arg 
+		   (command-line-option-argument option)
+		   (command-line-option-description option))))
+
+(defun register-c-l-o (arg description function &optional argument)
+  "For use in adding command line arguments.  The motivation behind
+it is to make it easy to add new command line arguments and
+have them documented."
+  (let ((clo (make-command-line-option :description description
+				       :argument    argument
+				       :action      function)))
+    (setf (gethash arg *command-line-options*) clo)))
+
+(defun call-command-line-option-action (arg)
+  "Performs the action associated with a given command line."
+  (let ((option (gethash arg *command-line-options*)))
+    (if option
+	(let ((action (command-line-option-action option)))
+	  (cond ((stringp action) (call-command-line-option-action action))
+		((functionp action) (funcall action))
+		(t (error "Scripting error.. unknown action for '~A'" arg))))
+        (progn
+	  (display-help)
+	  (error "Error: Unexpected command line argument: ~A" arg)))))
+
 (defun main (&rest args)
+  ;; setup the command line args tables
+  (setf *command-line-options*
+	(make-hash-table :test #'equal))
+
   (let* ((user (getenv "USER"))
 	 (home (getenv "HOME"))
 	 (spoolfile (guess-spool-filename user))
@@ -19,47 +70,77 @@
 	(error "Environment variable HOME is not set"))
     (if (null spoolfile)
 	(error "Couldn't determine your spool filename"))
-    
+
+    (register-c-l-o "-c"
+		    "Defaults to '~/.mailfilter.cl'."
+		    (lambda ()
+		      (setf *config-file* (pop args))
+		      (or (probe-file *config-file*)
+			  (error "Config file ~a does not exist." 
+				 *config-file*)))
+		    "CONFIG_FILE")
+
+    (register-c-l-o "-t"
+		    (format nil "defaults to '~A' seconds." interval)
+		    (lambda ()
+		      (if (null args)
+			  (error "~A: missing argument to -t" prgname))
+		      (setf interval (parse-integer (pop args))))
+		    "INTERVAL")
+
+    (register-c-l-o "-T"
+		    "enable showing the spool check time."
+		    (lambda ()
+		      (setf show-time t)))
+
+    (register-c-l-o "-o"
+		    "run once and exit."
+		    (lambda ()
+		      (setf once t)))
+
+    (register-c-l-o "-d"
+		    "enable debugging."
+		    (lambda ()
+		      (setf debug t)))
+
+    (register-c-l-o "-l"
+		    "enable long output (implies -o)"
+		    (lambda ()
+		      (setf long t)
+		      (setf *long* t)
+		      (call-command-line-option-action "-o")))
+
+    (register-c-l-o "-u"
+		    "enable showing of unread mail."
+		    (lambda ()
+		      (setf show-unread t)))
+
+    (register-c-l-o "-p"
+		    "enable printing of separators."
+		    (lambda ()
+		      (setf print-separators #\,)))
+
+    (register-c-l-o "-file"
+		    (format nil "defaults to '~A'" spoolfile)
+		    (lambda ()
+		      (when (null args)
+			(error "mailstatus: missing argument to -file"))
+		      (setf spoolfile (pop args))
+		      (setf dotlock nil))
+		    "SPOOLFILE")
+
+    (register-c-l-o "-h"
+		    "Print this help menu and exit."
+		    (lambda ()
+		      (display-help)
+		      (error "Exiting..")))
+
+    (register-c-l-o "-help"
+		    "The same as -h"
+		    "-h")
+
     (while args
-      (cond 
-       ((string= (first args) "-c")
-	(pop args)
-	(setq *config-file* (first args))
-	(or (probe-file *config-file*)
-	    (error "Config file ~a does not exist." *config-file*))
-	(pop args))
-       ((string= (first args) "-t")
-	(pop args)
-	(if (null args)
-	    (error "~A: missing argument to -t" prgname))
-	(setf interval (parse-integer (pop args))))
-       ((string= (first args) "-T")
-	(pop args)
-	(setf show-time t))
-       ((string= (first args) "-o")
-	(pop args)
-	(setf once t))
-       ((string= (first args) "-d")
-	(pop args)
-	(setf debug t))
-       ((string= (first args) "-l")
-	(pop args)
-	(setf long t)
-	(setf *long* t)
-	(setf once t))
-       ((string= (first args) "-u")
-	(pop args)
-	(setf show-unread t))
-       ((string= (first args) "-p")
-	(pop args)
-	(setf print-separators #\,))
-       ((string= (first args) "-file")
-	(pop args)
-	(when (null args)
-	  (error "mailstatus: missing argument to -file"))
-	(setf spoolfile (pop args))
-	(setf dotlock nil))
-       (t (error "~A: Unexpected command line argument: ~A" (first args)))))
+      (call-command-line-option-action (pop args)))
 
     (load-user-config home)
     
@@ -305,6 +386,3 @@
 	 then (setq end (parse-integer end))
 	      (1+ (- end start))
 	 else 1))))
-      
-
-		    
