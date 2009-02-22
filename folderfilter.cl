@@ -1,4 +1,4 @@
-;; $Id: folderfilter.cl,v 1.6 2007/08/15 18:08:37 dancy Exp $
+;; $Id: folderfilter.cl,v 1.7 2009/02/22 22:24:06 elliott Exp $
 
 (in-package :user)
 
@@ -7,37 +7,62 @@
   (use-package :excl.osi))
 
 (defun main (&rest args)
+  (setf *command-line-options*
+	(make-hash-table :test #'equal))
   (let* ((user (getenv "USER"))
 	 (home (getenv "HOME"))
 	 (prgname (pop args))
+	 (usage (format nil "usage: ~A [options] folder" prgname))
 	 folder
 	 debug)
     (if (null user)
 	(error "Environment variable USER is not set"))
     (if (null home)
 	(error "Environment variable HOME is not set"))
-    
+
+    (register-c-l-o "-c"
+		    "Defaults to '~/.mailfilter.cl'"
+		    (lambda ()
+		      (setq *config-file* (first args))
+		      (or (probe-file *config-file*)
+			  (error "Config file ~A does not exist." 
+				 *config-file*))))
+
+    (register-c-l-o "-d"
+		    "enable debugging"
+		    (lambda ()
+		      (setf debug t)))
+
+    (register-c-l-o "-h"
+		    "Print this help menu and exit."
+		    (lambda ()
+		      (display-help usage)
+		      (error "Exiting..")))
+
+    (register-c-l-o "-help"
+		    "The same as -h"
+		    "-h")
+
     (while args
-      (cond 
-       ((string= (first args) "-c")
-	(pop args)
-	(setq *config-file* (first args))
-	(or (probe-file *config-file*)
-	    (error "Config file ~a does not exist." *config-file*))
-	(pop args))
-       ((string= (first args) "-d")
-	(setf debug t)
-	(pop args))
-       ((match-re "^\\+" (first args))
-	(if folder
-	    (error "~A: Already specified a folder: ~A" prgname folder))
-	(setf folder (pop args)))
-       (t (error "~A: Invalid argument: ~A" prgname (first args)))))
+      (call-command-line-option-action 
+       (pop args)
+       ;; default action
+       (lambda (a)
+	 (if (match-re "^\\+" a)
+	     (if folder
+		 (error "~A: Already specified a folder: ~A" 
+			prgname 
+			folder)
+		 (setf folder a))
+	     (error "~A: Invalid argument: ~A" 
+		    prgname 
+		    a)))))
     
     (load-user-config home)
     
-    (if (null folder)
-	(error "Usage: ~A [-d] folder" prgname))
+    (when (null folder)
+      (display-help usage)
+      (error "Exiting.."))
     
     (let ((folderdir (concat (get-mhpath home) "/" (subseq folder 1) "/"))
 	  (moves (make-hash-table :test #'equal)))

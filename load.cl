@@ -6,7 +6,7 @@
   (require :regexp2) 
   
   (defparameter *file-list* '("version" "lex" "emailaddr" "parse" "spool"
-			      "subs"))
+			      "subs" "command-line-options"))
   
   (defun do-compile ()
     (let ((excl::*break-on-warnings* t))

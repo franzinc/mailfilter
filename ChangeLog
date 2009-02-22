@@ -1,6 +1,14 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2009-02-22  Elliott Johnson <elliott@gemini.franz.com>
+v1.17
+	* command-line-options.cl: Abstracted the command line option
+		structure and related functions into this file.
+	* mailstatus.cl: Cleanups from the above move.
+	* incfilter.cl: Updated to use the new clo structure.
+	* folderfilter.cl: Update to use the new clo structure.
+	
 2009-02-14  Elliott Johnson <elliott@gemini.franz.com>
 v1.16
 

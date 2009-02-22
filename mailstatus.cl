@@ -1,55 +1,8 @@
-;; $Id: mailstatus.cl,v 1.15 2009/02/21 18:34:57 elliott Exp $
+;; $Id: mailstatus.cl,v 1.16 2009/02/22 22:24:06 elliott Exp $
 
 (in-package :user)
 
 (defvar *long* nil)
-
-(defvar *command-line-options*
-  ()
-  "A table of actions to use for a given command line option.")
-
-(defstruct command-line-option ()
-  ;; Documentation to display.
-  (description "undocumented feature." :type string)
-  ;; The name of an argument this option accepts
-  (argument nil :type (or null string))
-  ;; An action that'll be funcalled when the option is specified.
-  ;;   Value can be a function that is funcalled or a string,
-  ;;   which acts as an alias to another option.
-  (action "-h" :type (or function string)))
- 
-(defun display-help ()
-  (format t "usage: mailstatus [options]~%~%")
-  (format t "options:~%")
-  (loop for arg being the hash-keys in 
-	*command-line-options*
-	using (hash-value option)
-	do (format t 
-		   "~2T~A~@[ ~A~]~20T~A~%" 
-		   arg 
-		   (command-line-option-argument option)
-		   (command-line-option-description option))))
-
-(defun register-c-l-o (arg description function &optional argument)
-  "For use in adding command line arguments.  The motivation behind
-it is to make it easy to add new command line arguments and
-have them documented."
-  (let ((clo (make-command-line-option :description description
-				       :argument    argument
-				       :action      function)))
-    (setf (gethash arg *command-line-options*) clo)))
-
-(defun call-command-line-option-action (arg)
-  "Performs the action associated with a given command line."
-  (let ((option (gethash arg *command-line-options*)))
-    (if option
-	(let ((action (command-line-option-action option)))
-	  (cond ((stringp action) (call-command-line-option-action action))
-		((functionp action) (funcall action))
-		(t (error "Scripting error.. unknown action for '~A'" arg))))
-        (progn
-	  (display-help)
-	  (error "Error: Unexpected command line argument: ~A" arg)))))
 
 (defun main (&rest args)
   ;; setup the command line args tables
@@ -63,6 +16,7 @@ have them documented."
 	 (prgname (pop args))
 	 (interval 30) ;; seconds
 	 (boxes (make-hash-table :test #'equal))
+	 (usage (format nil "usage: ~A [options]" prgname))
 	 show-time once debug long show-unread print-separators)
     (if (null user)
 	(error "Environment variable USER is not set"))
@@ -132,7 +86,7 @@ have them documented."
     (register-c-l-o "-h"
 		    "Print this help menu and exit."
 		    (lambda ()
-		      (display-help)
+		      (display-help usage)
 		      (error "Exiting..")))
 
     (register-c-l-o "-help"
@@ -140,7 +94,12 @@ have them documented."
 		    "-h")
 
     (while args
-      (call-command-line-option-action (pop args)))
+      (call-command-line-option-action (pop args)
+				       (lambda (a)
+					 (display-help usage)
+					 (error "~A: Unexpected command line argument: ~A" 
+						prgname
+						a))))
 
     (load-user-config home)
     

@@ -1,4 +1,4 @@
-;; $Id: incfilter.cl,v 1.19 2007/12/10 23:02:07 dancy Exp $
+;; $Id: incfilter.cl,v 1.20 2009/02/22 22:24:06 elliott Exp $
 
 (in-package :user)
 
@@ -8,6 +8,8 @@
   (require :locale))
 
 (defun main (&rest args)
+  (setf *command-line-options*
+	(make-hash-table :test #'equal))
   (let* ((user (getenv "USER"))
 	 (home (getenv "HOME"))
 	 (spoolfile (guess-spool-filename user))
@@ -15,50 +17,75 @@
 	 (dotlock t)
 	 (truncate :unset)
 	 (prgname (pop args))
+	 (usage (format nil "usage: ~A [options] folders" prgname))
 	 (*incorporating-mail* t)
 	 inc-args
 	 debug verbose)
-    (declare (ignore prgname))
     (if (null user)
 	(error "Environment variable USER is not set"))
     (if (null home)
 	(error "Environment variable HOME is not set"))
     (if (null spoolfile)
 	(error "Couldn't determine your spool filename"))
+
+    (register-c-l-o "-c"
+		    "Defaults to '~/.mailfilter.cl'."
+		    (lambda ()
+		      (setf *config-file* (pop args))
+		      (or (probe-file *config-file*)
+			  (error "Config file ~A does not exist."
+				 *config-file*)))
+		    "CONFIG_FILE")
     
+    (register-c-l-o "-d"
+		    "increase the debugging level."
+		    (lambda ()
+		      (if debug 
+			  (incf debug)
+			  (setf debug 1))))
+
+    (register-c-l-o "-v"
+		    "increase the verbosity level."
+		    (lambda ()
+		      (if verbose
+			  (incf verbose)
+			  (setf verbose 1))))
+
+    (register-c-l-o "-notruncate"
+		    "disable truncating INPUTFILE"
+		    (lambda ()
+		      (setf truncate nil)))
+
+    (register-c-l-o "-truncate"
+		    "enable truncating INPUTFILE (default)"
+		    (lambda ()
+		      (setf truncate t)))
+
+    (register-c-l-o "-file"
+		    (format nil "defaults to '~A'" inputfile)
+		    (lambda ()
+		      (if (null args)
+			  (error "inc: missing argument to -file"))
+		      (setf inputfile (pop args))
+		      (setf dotlock nil)
+		      (if (eq truncate :unset)
+			  (setf truncate nil)))
+		    "INPUTFILE")
+
+    (register-c-l-o "-h"
+		    "Print this help menu and exit."
+		    (lambda ()
+		      (display-help usage)
+		      (error "Exiting..")))
+
+    (register-c-l-o "-help"
+		    "The same as -h"
+		    "-h")
+
     (while args
-      (cond 
-       ((string= (first args) "-c")
-	(pop args)
-	(setq *config-file* (first args))
-	(or (probe-file *config-file*)
-	    (error "Config file ~a does not exist." *config-file*))
-	(pop args))
-       ((string= (first args) "-d")
-	(if debug
-	    (incf debug)
-	  (setf debug 1))
-	(pop args))
-       ((string= (first args) "-v")
-	(pop args)
-	(if verbose
-	    (incf verbose)
-	  (setf verbose 1)))
-       ((string= (first args) "-notruncate")
-	(setf truncate nil)
-	(pop args))
-       ((string= (first args) "-truncate")
-	(setf truncate t)
-	(pop args))
-       ((string= (first args) "-file")
-	(pop args)
-	(if (null args)
-	    (error "inc: missing argument to -file"))
-	(setf inputfile (pop args))
-	(setf dotlock nil)
-	(if (eq truncate :unset)
-	    (setf truncate nil)))
-       (t (push (pop args) inc-args))))
+      (call-command-line-option-action (pop args)
+				       (lambda (arg)
+					 (push arg inc-args))))
     
     (load-user-config home)
     
