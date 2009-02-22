@@ -2,6 +2,12 @@
 **** (please leave this header at the top of the file) ****
 
 2009-02-22  Elliott Johnson <elliott@gemini.franz.com>
+v1.18
+	* mailstatus.cl: Added a -version arg
+	* incfilter.cl: Added a -version arg
+	* folderfilter.cl: Added a -version arg
+
+2009-02-22  Elliott Johnson <elliott@gemini.franz.com>
 v1.17
 	* command-line-options.cl: Abstracted the command line option
 		structure and related functions into this file.

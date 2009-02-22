@@ -1,4 +1,4 @@
-;; $Id: mailstatus.cl,v 1.16 2009/02/22 22:24:06 elliott Exp $
+;; $Id: mailstatus.cl,v 1.17 2009/02/22 22:47:32 elliott Exp $
 
 (in-package :user)
 
@@ -92,6 +92,13 @@
     (register-c-l-o "-help"
 		    "The same as -h"
 		    "-h")
+
+    (register-c-l-o "-version"
+		    "Prints the version and exits."
+		    (lambda ()
+		      (error "~A: version ~A"
+			     prgname
+			     *mailfilter-version*)))
 
     (while args
       (call-command-line-option-action (pop args)
