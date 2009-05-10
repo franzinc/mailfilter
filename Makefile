@@ -1,17 +1,21 @@
 # $Id: Makefile,v 1.16 2009/02/03 21:27:42 elliott Exp $
 
-at_franz = $(shell if test -d /fi/cl/8.1/acl; then echo t; else echo nil; fi)
+Makefile_local = \
+	$(shell if test -f Makefile.local; then echo Makefile.local; fi)
+
+ifneq ($(Makefile_local),)
+include $(Makefile_local)
+endif
 
 ARCH=$(shell uname -i)
 
-ifeq ($(at_franz),t)
-mlisp=$(shell if [ $(ARCH) = x86_64 ]; then echo mlisp-64; else echo mlisp; fi)
-lisp=/fi/cl/8.1/bin/$(mlisp)
-installdir=$(RPM_BUILD_ROOT)/usr/fi
+ifeq ($(ARCH),x86_64)
+lisp?=/fi/cl/8.1/bin/mlisp-64
 else
-lisp=mlisp
-installdir=$(RPM_BUILD_ROOT)/usr/local
+lisp?=/fi/cl/8.1/bin/mlisp
 endif
+
+installdir?=$(RPM_BUILD_ROOT)/usr/fi
 
 installsubdir=$(installdir)/mailfilter
 
@@ -69,11 +73,12 @@ files := Makefile *.cl
 tarball:
 	mkdir $(tardir)
 	cp $(files) $(tardir)
+	if test -f Makefile.local; then cp Makefile.local $(tardir); fi
 	tar zcf $(tarball) $(tardir)
 	rm -fr $(tardir)
 
 rpm:    tarball
-	mkdir -p BUILD RPMS/i386 SRPMS
+	mkdir -p BUILD RPMS/$(ARCH) SRPMS
 	rpmbuild --define "_sourcedir $(CURDIR)" \
 		--define "_topdir $(CURDIR)" \
 		--define "version $(version)" \
@@ -82,11 +87,15 @@ rpm:    tarball
 		-ba $(name).spec
 	rm $(tarball)
 
+REPOHOST                 =? fs1
+REPOBASE                 =? /storage1/franz/common/
+REMOVE_PREVIOUS_VERSIONS ?= yes
 
-REPOHOST=fs1
-REPODIR=/storage1/franz/common/$(ARCH)
+REPODIR=$(REPOBASE)/$(ARCH)
 
 install-repo:
+ifeq ($(REMOVE_PREVIOUS_VERSIONS),yes)
 	ssh root@$(REPOHOST) "rm -f $(REPODIR)/$(name)-*"
+endif
 	scp RPMS/$(ARCH)/$(name)-$(version)-*.rpm root@$(REPOHOST):$(REPODIR)
 	ssh root@$(REPOHOST) "createrepo --update -q $(REPODIR)"

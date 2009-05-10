@@ -1,6 +1,17 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2009-05-09  layer  <layer@relay.known.net>
+
+	* rename .cvsignore to .gitignore and add Makefile.local to it
+	* Makefile:
+	- use $(ARCH) instead of hardwired 'i386'
+	- look for and include Makefile.local, so predefined variables
+	  can be overridden
+	- use ?= in a bunch of places so Makefile.local can provide
+	  default values
+	- remove $(at_franz); use $(REMOVE_PREVIOUS_VERSIONS) instead
+
 2009-02-22  Elliott Johnson <elliott@gemini.franz.com>
 v1.18
 	* mailstatus.cl: Added a -version arg

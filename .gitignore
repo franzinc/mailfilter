@@ -5,3 +5,4 @@ mailstatus
 BUILD
 RPMS
 SRPMS
+Makefile.local
