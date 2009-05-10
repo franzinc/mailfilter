@@ -87,8 +87,8 @@ rpm:    tarball
 		-ba $(name).spec
 	rm $(tarball)
 
-REPOHOST                 =? fs1
-REPOBASE                 =? /storage1/franz/common/
+REPOHOST                 ?= fs1
+REPOBASE                 ?= /storage1/franz/common/
 REMOVE_PREVIOUS_VERSIONS ?= yes
 
 REPODIR=$(REPOBASE)/$(ARCH)
