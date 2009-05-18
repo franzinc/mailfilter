@@ -1,6 +1,17 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2009-05-18  Ahmon Dancy  <dancy@dancy>
+v1.19
+
+	* sub.sl: 
+
+	scan-message: Return list of Resent-To and Resent-Cc recips as
+	an additional return value.
+
+	with-each-message: Include resent-to/cc recips in the 'recips'
+	slot of the msginfo structure along w/ the usual to/cc recips.
+
 2009-05-09  layer  <layer@relay.known.net>
 
 	* rename .cvsignore to .gitignore and add Makefile.local to it

@@ -2,4 +2,4 @@
 
 (in-package :user)
 
-(defparameter *mailfilter-version* "1.18")
+(defparameter *mailfilter-version* "1.19")

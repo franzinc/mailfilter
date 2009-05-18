@@ -182,28 +182,34 @@
 ;;  headers alist
 ;;  list of body lines
 ;;  list of strings: senders (envelope sender and address in From:)
-;;  list of strings: recipients (To: and Cc: headers)
+;;  list of strings: recipients from To: header
+;;  list of strings: recipients from Cc: header
+;;  list of strings: recipients from Resent-To or Resent-CC
+
 (defun scan-message (stream &key (maxbodylines 0))
   (with-spool-excursion (stream)
     (multiple-value-bind (headers bodylines envelope-sender)
 	(scan-message-headers stream maxbodylines)
       (let (froms tmpheader)
-	(setf tmpheader (get-header "From" headers))
-	(if tmpheader
+	(if (setf tmpheader (get-header "From" headers))
 	    (setf froms (get-addr-list tmpheader)))
 	
 	(if envelope-sender
 	    (pushnew envelope-sender froms :test #'equalp))
 	
-	(setf tmpheader (get-header "Return-Path" headers))
-	(if tmpheader
+	(if (setf tmpheader (get-header "Return-Path" headers))
+	    (pushnew tmpheader froms :test #'equalp))
+	
+	(if (setf tmpheader (get-header "Return-Path" headers))
 	    (pushnew tmpheader froms :test #'equalp))
 	
 	(values headers 
 		bodylines
 		froms
 		(get-header-recips headers "To")
-		(get-header-recips headers "Cc"))))))
+		(get-header-recips headers "Cc")
+		(append (get-header-recips headers "Resent-To")
+			(get-header-recips headers "Resent-Cc")))))))
 
 
 (defun get-header-recips (headers what &aux (res '()))
@@ -368,13 +374,15 @@
 	(actions (gensym))
 	(references (gensym))
 	(to (gensym))
-	(cc (gensym)))
+	(cc (gensym))
+	(resent-tos (gensym))
+	)
     `(let ((,spoolstreamvar ,spoolstream)
 	   (,uservar ,user)
 	   (,msgnum (1- ,initial-msgnum)))
        (loop
 	 (incf ,msgnum)
-	 (multiple-value-bind (,headers ,bodylines ,froms ,to ,cc)
+	 (multiple-value-bind (,headers ,bodylines ,froms ,to ,cc ,resent-tos)
 	     (scan-message ,spoolstreamvar :maxbodylines *body-lines-to-read*)
 	   (if (null ,headers) ;; end of spool
 	       (return)) 
@@ -386,7 +394,7 @@
 		   :headers ,headers :bodylines ,bodylines
 		   :to ,to
 		   :cc ,cc
-		   :recips (append ,to ,cc)
+		   :recips (append ,to ,cc ,resent-tos)
 		   :froms ,froms
 		   :subject (get-header "Subject" ,headers)
 		   :bhid (collect-bh-id ,headers)
