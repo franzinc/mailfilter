@@ -2,6 +2,20 @@
 **** (please leave this header at the top of the file) ****
 
 2009-05-18  Ahmon Dancy  <dancy@dancy>
+
+	* Makefile: 
+
+	Removed the unnecessary trailing slash from REPOBASE.
+
+	install-repo target: Instead of running createrepo against
+	$(REPODIR), cd to $REPODIR and run against createrepo
+	against ".".   Without this change, the repodata contains the
+	full directory path to the RPM instead of a relative path.
+	The former is no good for HTTP access to the repo (unless the
+	URL path is exactly the same as the directory path, which is
+	not the case at Franz).
+	
+2009-05-18  Ahmon Dancy  <dancy@dancy>
 v1.19
 
 	* sub.sl: 

@@ -88,7 +88,7 @@ rpm:    tarball
 	rm $(tarball)
 
 REPOHOST                 ?= fs1
-REPOBASE                 ?= /storage1/franz/common/
+REPOBASE                 ?= /storage1/franz/common
 REMOVE_PREVIOUS_VERSIONS ?= yes
 
 REPODIR=$(REPOBASE)/$(ARCH)
@@ -98,4 +98,4 @@ ifeq ($(REMOVE_PREVIOUS_VERSIONS),yes)
 	ssh root@$(REPOHOST) "rm -f $(REPODIR)/$(name)-*"
 endif
 	scp RPMS/$(ARCH)/$(name)-$(version)-*.rpm root@$(REPOHOST):$(REPODIR)
-	ssh root@$(REPOHOST) "createrepo --update -q $(REPODIR)"
+	ssh root@$(REPOHOST) "cd $(REPODIR) && createrepo --update -q ."
