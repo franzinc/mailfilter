@@ -26,7 +26,7 @@ make
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/fi/mailfilter
 for program in mailstatus incfilter folderfilter; do
-	cp -p $program/* $RPM_BUILD_ROOT/usr/fi/mailfilter
+	cp -rp $program/* $RPM_BUILD_ROOT/usr/fi/mailfilter
 	ln -s /usr/fi/mailfilter/$program $RPM_BUILD_ROOT/usr/fi/$program
 done
 
