@@ -1,6 +1,11 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2009-09-09  Kevin Layer  <layer@gemini.franz.com>
+v1.20
+	* rebuild with 8.2.beta
+	* Makefile: fix REPOBASE
+
 2009-05-18  Ahmon Dancy  <dancy@dancy>
 
 	* Makefile: 
