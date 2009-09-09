@@ -4,7 +4,6 @@
 2009-09-09  Kevin Layer  <layer@gemini.franz.com>
 v1.20
 	* rebuild with 8.2.beta
-	* Makefile: fix REPOBASE
 	* mailfilter.spec: handle copying of locales/
 
 2009-05-18  Ahmon Dancy  <dancy@dancy>
