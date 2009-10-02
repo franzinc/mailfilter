@@ -6,7 +6,9 @@
   (require :aserve)
   (use-package :net.aserve.client)
   (require :shell)
-  (use-package :excl.shell))
+  (use-package :excl.shell)
+  (require :mime)
+  (use-package :net.post-office))
 
 ;; variables that may be redefined by the user
 (defparameter *incorporating-mail* nil)
@@ -396,7 +398,8 @@
 		   :cc ,cc
 		   :recips (append ,to ,cc ,resent-tos)
 		   :froms ,froms
-		   :subject (get-header "Subject" ,headers)
+		   :subject (decode-header-text
+			     (get-header "Subject" ,headers))
 		   :bhid (collect-bh-id ,headers)
 		   :class (get-header "Class" ,headers))))
 	     

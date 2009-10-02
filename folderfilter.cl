@@ -7,6 +7,8 @@
   (use-package :excl.osi))
 
 (defun main (&rest args)
+  (setq *load-print* nil)
+  (setq *load-verbose* nil)
   (setf *command-line-options*
 	(make-hash-table :test #'equal))
   (let* ((user (getenv "USER"))

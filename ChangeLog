@@ -1,6 +1,17 @@
 **** Don't forget to update the version in version.cl ****
 **** (please leave this header at the top of the file) ****
 
+2009-10-02  Kevin Layer  <layer@gemini.franz.com>
+v1.21
+
+	* Makefile: add to `clean'
+	* folderfilter.cl,
+	* incfilter.cl,
+	* mailstatus.cl: *load-print* and *load-verbose* to nil
+	* load.cl: :runtime-bundle t on generate-executable
+	* subs.cl: call decode-header-text on the subject, so filters
+	  can do something with it.
+
 2009-09-09  Kevin Layer  <layer@gemini.franz.com>
 v1.20
 	* rebuild with 8.2.beta
