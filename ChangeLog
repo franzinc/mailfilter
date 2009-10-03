@@ -1,9 +1,12 @@
-**** Don't forget to update the version in version.cl ****
-**** (please leave this header at the top of the file) ****
+Don't forget to update the version in version.cl!
+(and please leave these two lines at the top of the file)
+
+2009-10-03  Kevin Layer  <layer@gemini.franz.com>
+v1.22
+	* subs.cl: don't call decode-header-text is there is no subject
 
 2009-10-02  Kevin Layer  <layer@gemini.franz.com>
 v1.21
-
 	* Makefile: add to `clean'
 	* folderfilter.cl,
 	* incfilter.cl,

@@ -398,8 +398,8 @@
 		   :cc ,cc
 		   :recips (append ,to ,cc ,resent-tos)
 		   :froms ,froms
-		   :subject (decode-header-text
-			     (get-header "Subject" ,headers))
+		   :subject (let ((sub (get-header "Subject" ,headers)))
+			      (when sub (decode-header-text sub)))
 		   :bhid (collect-bh-id ,headers)
 		   :class (get-header "Class" ,headers))))
 	     
