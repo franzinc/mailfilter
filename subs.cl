@@ -399,7 +399,13 @@
 		   :recips (append ,to ,cc ,resent-tos)
 		   :froms ,froms
 		   :subject (let ((sub (get-header "Subject" ,headers)))
-			      (when sub (decode-header-text sub)))
+			      (when sub
+				(let ((decoded-sub
+				       (ignore-errors
+					(decode-header-text sub))))
+				  (if* decoded-sub
+				     thenret
+				     else sub))))
 		   :bhid (collect-bh-id ,headers)
 		   :class (get-header "Class" ,headers))))
 	     
@@ -412,7 +418,7 @@
 		   (and ,dispatched-to
 			(string= ,uservar ,dispatched-to)))
 		 (setf (msginfo-references ,minfovar) ,references)))
-	     
+
 	     #+ignore
 	     (let ((,classificationvar 
 		    (if (fboundp 'classify-message)
@@ -434,7 +440,7 @@
 			  (funcall 'classify-message ,minfovar))
 		      "+inbox")))
 	       ,@body)
-	     
+
 	     (let ((,classificationvar 
 		    (if (fboundp 'classify-message)
 			(funcall 'classify-message ,minfovar)

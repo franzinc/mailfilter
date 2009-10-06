@@ -1,6 +1,11 @@
 Don't forget to update the version in version.cl!
 (and please leave these two lines at the top of the file)
 
+2009-10-06  Kevin Layer  <layer@gemini.franz.com>
+v1.23
+	* subs.cl: ignore-errors around decode-header-text because
+	  some of the subjects in spam are malformed, I've found
+
 2009-10-03  Kevin Layer  <layer@gemini.franz.com>
 v1.22
 	* subs.cl: don't call decode-header-text is there is no subject
