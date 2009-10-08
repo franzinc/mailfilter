@@ -56,6 +56,7 @@ uninstall:
 	rm -fr $installsubdir
 
 clean: 
+	rm -fr BUILD BUILDROOT SRPMS RPMS SPECS
 	rm -fr *.fasl *~ incfilter/ mailstatus/ folderfilter/ *.out
 
 realclean: clean

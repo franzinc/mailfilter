@@ -6,7 +6,9 @@
   (require :aserve)
   (use-package :net.aserve.client)
   (require :shell)
-  (use-package :excl.shell))
+  (use-package :excl.shell)
+  (require :mime)
+  (use-package :net.post-office))
 
 ;; variables that may be redefined by the user
 (defparameter *incorporating-mail* nil)
@@ -396,7 +398,14 @@
 		   :cc ,cc
 		   :recips (append ,to ,cc ,resent-tos)
 		   :froms ,froms
-		   :subject (get-header "Subject" ,headers)
+		   :subject (let ((sub (get-header "Subject" ,headers)))
+			      (when sub
+				(let ((decoded-sub
+				       (ignore-errors
+					(decode-header-text sub))))
+				  (if* decoded-sub
+				     thenret
+				     else sub))))
 		   :bhid (collect-bh-id ,headers)
 		   :class (get-header "Class" ,headers))))
 	     
@@ -409,7 +418,7 @@
 		   (and ,dispatched-to
 			(string= ,uservar ,dispatched-to)))
 		 (setf (msginfo-references ,minfovar) ,references)))
-	     
+
 	     #+ignore
 	     (let ((,classificationvar 
 		    (if (fboundp 'classify-message)
@@ -431,7 +440,7 @@
 			  (funcall 'classify-message ,minfovar))
 		      "+inbox")))
 	       ,@body)
-	     
+
 	     (let ((,classificationvar 
 		    (if (fboundp 'classify-message)
 			(funcall 'classify-message ,minfovar)

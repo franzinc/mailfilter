@@ -5,6 +5,8 @@
 (defvar *long* nil)
 
 (defun main (&rest args)
+  (setq *load-print* nil)
+  (setq *load-verbose* nil)
   ;; setup the command line args tables
   (setf *command-line-options*
 	(make-hash-table :test #'equal))

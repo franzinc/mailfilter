@@ -25,4 +25,5 @@
       (mapcar #'(lambda (f) (concatenate 'string f ".fasl")) *file-list*)
       (list :regexp2 :shell :trace))
      :include-compiler t
+     :runtime-bundle t
      :runtime :dynamic)))

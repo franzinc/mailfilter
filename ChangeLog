@@ -1,5 +1,24 @@
-**** Don't forget to update the version in version.cl ****
-**** (please leave this header at the top of the file) ****
+Don't forget to update the version in version.cl!
+(and please leave these two lines at the top of the file)
+
+2009-10-06  Kevin Layer  <layer@gemini.franz.com>
+v1.23
+	* subs.cl: ignore-errors around decode-header-text because
+	  some of the subjects in spam are malformed, I've found
+
+2009-10-03  Kevin Layer  <layer@gemini.franz.com>
+v1.22
+	* subs.cl: don't call decode-header-text is there is no subject
+
+2009-10-02  Kevin Layer  <layer@gemini.franz.com>
+v1.21
+	* Makefile: add to `clean'
+	* folderfilter.cl,
+	* incfilter.cl,
+	* mailstatus.cl: *load-print* and *load-verbose* to nil
+	* load.cl: :runtime-bundle t on generate-executable
+	* subs.cl: call decode-header-text on the subject, so filters
+	  can do something with it.
 
 2009-09-09  Kevin Layer  <layer@gemini.franz.com>
 v1.20
