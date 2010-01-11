@@ -10,9 +10,9 @@ endif
 ARCH=$(shell uname -i)
 
 ifeq ($(ARCH),x86_64)
-lisp?=/fi/cl/8.1/bin/mlisp-64
+lisp?=/fi/cl/8.2/bin/mlisp-64
 else
-lisp?=/fi/cl/8.1/bin/mlisp
+lisp?=/fi/cl/8.2/bin/mlisp
 endif
 
 installdir?=$(RPM_BUILD_ROOT)/usr/fi

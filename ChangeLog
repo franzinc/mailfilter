@@ -1,6 +1,10 @@
 Don't forget to update the version in version.cl!
 (and please leave these two lines at the top of the file)
 
+2010-01-11  Kevin Layer  <layer@gemini.franz.com>
+
+	* Makefile: use 8.2
+
 2009-10-06  Kevin Layer  <layer@gemini.franz.com>
 v1.23
 	* subs.cl: ignore-errors around decode-header-text because
