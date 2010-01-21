@@ -1,4 +1,3 @@
-# $Id: Makefile,v 1.16 2009/02/03 21:27:42 elliott Exp $
 
 at_franz = $(shell if test -d /fi/cl/8.2/acl; then echo t; else echo nil; fi)
 
@@ -25,7 +24,19 @@ libfiles=emailaddr.cl lex.cl load.cl parse.cl spool.cl subs.cl
 
 default: clean all
 
-all: mailstatus/mailstatus incfilter/incfilter folderfilter/folderfilter
+ifeq ($(at_franz),t)
+ALL_EXTRA = repo_check
+endif
+
+all: $(ALL_EXTRA) mailstatus/mailstatus incfilter/incfilter \
+	folderfilter/folderfilter
+
+ifeq ($(at_franz),t)
+repo_check: FORCE
+	@if test ! -d fi-apps-common; then \
+	    git clone git:/repo/git/fi-apps-common; \
+	fi
+endif
 
 mailstatus/mailstatus: $(libfiles) mailstatus.cl
 	rm -fr mailstatus/
