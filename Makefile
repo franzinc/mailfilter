@@ -97,13 +97,15 @@ tarball:
 	tar zcf $(tarball) $(tardir)
 	rm -fr $(tardir)
 
+SIGN ?= --sign
+
 rpm:    tarball
 	mkdir -p BUILD RPMS/$(ARCH) SRPMS
 	rpmbuild --define "_sourcedir $(CURDIR)" \
 		--define "_topdir $(CURDIR)" \
 		--define "version $(version)" \
 		--define "release $(release)" \
-		--sign \
+		$(SIGN) \
 		-ba $(name).spec
 	rm $(tarball)
 
