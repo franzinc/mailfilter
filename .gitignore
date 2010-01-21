@@ -1,8 +1,9 @@
-autoloads.out
-folderfilter
-incfilter
-mailstatus
-BUILD
-RPMS
-SRPMS
-Makefile.local
+/BUILD
+/Makefile.local
+/RPMS
+/SRPMS
+/autoloads.out
+/fi-apps-common
+/folderfilter
+/incfilter
+/mailstatus

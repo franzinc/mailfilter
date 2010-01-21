@@ -1,5 +1,7 @@
 # $Id: Makefile,v 1.16 2009/02/03 21:27:42 elliott Exp $
 
+at_franz = $(shell if test -d /fi/cl/8.2/acl; then echo t; else echo nil; fi)
+
 Makefile_local = \
 	$(shell if test -f Makefile.local; then echo Makefile.local; fi)
 
@@ -7,7 +9,7 @@ ifneq ($(Makefile_local),)
 include $(Makefile_local)
 endif
 
-ARCH=$(shell uname -i)
+ARCH ?= $(shell uname -i)
 
 ifeq ($(ARCH),x86_64)
 lisp?=/fi/cl/8.2/bin/mlisp-64
@@ -67,7 +69,13 @@ name := mailfilter
 version := $(shell grep 'mailfilter-version' version.cl | sed -e 's,.*"\(.*\)".*,\1,')
 tardir := $(name)-$(version)
 tarball := $(name)-$(version).tar.gz
+ifeq ($(at_franz),t)
+release ?= $(shell . fi-apps-common/rpm-utils.sh && \
+	rpm_next_release_number \
+	   $$fs1/$(ARCH)/mailfilter-$(version)-*.$(ARCH).rpm)
+else
 release ?= 1
+endif
 
 files := Makefile *.cl 
 
