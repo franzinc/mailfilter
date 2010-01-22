@@ -105,7 +105,7 @@ rpm:    tarball
 		--define "_topdir $(CURDIR)" \
 		--define "version $(version)" \
 		--define "release $(release)" \
-		$(SIGN) \
+		--target $(ARCH) $(SIGN) \
 		-ba $(name).spec
 	rm $(tarball)
 
