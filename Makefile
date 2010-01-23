@@ -84,7 +84,7 @@ tarball := $(name)-$(version).tar.gz
 ifeq ($(FI_APPS_COMMON),t)
 release ?= $(shell . fi-apps-common/rpm-utils.sh && \
 	rpm_next_release_number \
-	   $$fs1/$(ARCH)/mailfilter-$(version)-*.$(ARCH).rpm)
+	   /net/$(REPOHOST)$(REPOBASE)/$(ARCH)/mailfilter-$(version)-*.$(ARCH).rpm)
 else
 release ?= 1
 endif
