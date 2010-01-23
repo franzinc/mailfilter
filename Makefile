@@ -10,11 +10,12 @@ endif
 
 ARCH ?= $(shell uname -i)
 
-ifeq ($(ARCH),x86_64)
-lisp?=/fi/cl/8.2/bin/mlisp-64
+ifeq ($(at_franz),t)
+LISP ?= /fi/cl/8.2/bin/$(shell if [ $(ARCH) = x86_64 ]; then echo mlisp-64; else echo mlisp; fi)
 else
-lisp?=/fi/cl/8.2/bin/mlisp
 endif
+
+LISP ?= mlisp
 
 installdir?=$(RPM_BUILD_ROOT)/usr/fi
 
@@ -40,15 +41,15 @@ endif
 
 mailstatus/mailstatus: $(libfiles) mailstatus.cl
 	rm -fr mailstatus/
-	$(lisp) -L load.cl -e '(build "mailstatus")' -kill
+	$(LISP) -L load.cl -e '(build "mailstatus")' -kill
 
 incfilter/incfilter: $(libfiles) incfilter.cl
 	rm -fr incfilter/
-	$(lisp) -L load.cl -e '(build "incfilter")' -kill
+	$(LISP) -L load.cl -e '(build "incfilter")' -kill
 
 folderfilter/folderfilter: $(libfiles) folderfilter.cl
 	rm -fr folderfilter/
-	$(lisp) -L load.cl -e '(build "folderfilter")' -kill
+	$(LISP) -L load.cl -e '(build "folderfilter")' -kill
 
 install: all
 	mkdir -p $(installdir)
