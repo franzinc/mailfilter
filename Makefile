@@ -80,7 +80,7 @@ name := mailfilter
 version := $(shell grep 'mailfilter-version' version.cl | sed -e 's,.*"\(.*\)".*,\1,')
 tardir := $(name)-$(version)
 tarball := $(name)-$(version).tar.gz
-ifeq ($(at_franz),t)
+ifeq ($(FI_APPS_COMMON),t)
 release ?= $(shell . fi-apps-common/rpm-utils.sh && \
 	rpm_next_release_number \
 	   $$fs1/$(ARCH)/mailfilter-$(version)-*.$(ARCH).rpm)
@@ -109,9 +109,9 @@ rpm:    tarball
 		-ba $(name).spec
 	rm $(tarball)
 
+REMOVE_PREVIOUS_VERSIONS ?= no
 REPOHOST                 ?= fs1
 REPOBASE                 ?= /storage1/franz/common
-REMOVE_PREVIOUS_VERSIONS ?= yes
 
 REPODIR=$(REPOBASE)/$(ARCH)
 
