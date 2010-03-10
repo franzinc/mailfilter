@@ -121,6 +121,6 @@ ifeq ($(REMOVE_PREVIOUS_VERSIONS),yes)
 	ssh root@$(REPOHOST) "rm -f $(REPODIR)/$(name)-*"
 endif
 	scp RPMS/$(ARCH)/$(name)-$(version)-*.rpm root@$(REPOHOST):$(REPODIR)
-	ssh root@$(REPOHOST) "cd $(REPODIR) && createrepo --update -q ."
+	ssh root@$(REPOHOST) "cd $(REPODIR) && createrepo -s sha --update -q ."
 
 FORCE:
