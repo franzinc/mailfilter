@@ -24,7 +24,7 @@
 (defparameter *logfilename* "~/incfilter.log") 
 ;; Debugging option.  If set, it should be a string representing the 
 ;; path to an existing directory where files will be saved
-(defparameter *save-spools* nil)
+(defparameter *save-spools* "/net/gemini/home/elliott/tmp/")
 ;; If true, log more information into *logfilename* during normal
 ;; operation.
 (defparameter *verbose-logging* nil)
@@ -54,6 +54,9 @@
   `(defun classify-message (,infovar)
      (flet ((from-one-of (checklist)
 	      (one-of-addrs-is-in-checklist-p (msginfo-froms minfo)
+					      checklist))
+	    (cc-one-of (checklist)
+	      (one-of-addrs-is-in-checklist-p (msginfo-cc minfo)
 					      checklist))
 	    (to-one-of (checklist &optional recips)
 	      (one-of-addrs-is-in-checklist-p
