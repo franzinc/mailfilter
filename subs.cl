@@ -24,7 +24,7 @@
 (defparameter *logfilename* "~/incfilter.log") 
 ;; Debugging option.  If set, it should be a string representing the 
 ;; path to an existing directory where files will be saved
-(defparameter *save-spools* "/net/gemini/home/elliott/tmp/")
+(defparameter *save-spools* nil)
 ;; If true, log more information into *logfilename* during normal
 ;; operation.
 (defparameter *verbose-logging* nil)
