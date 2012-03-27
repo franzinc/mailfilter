@@ -11,3 +11,13 @@ lisp.
 on gemini (as root):
 yum -y update mailfilter
 
+*******************************************************************************
+** interactive debugging
+*******************************************************************************
+
+:ld load.cl
+:cl incfilter.cl
+;; I couldn't figure out how to specify the arguments to the function
+;; `main' and have them actually work, so I ended up setting the
+;; variables of the arguments to what I wanted inside `main'.
+(main)
