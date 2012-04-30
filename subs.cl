@@ -136,6 +136,12 @@
 	     ""
 	   nil)))))
 
+(defun get-headers (header headers &aux (res '()))
+  (dolist (h headers)
+    (when (equalp header (car h))
+      (push (cdr h) res)))
+  (when res (nreverse res)))
+
 ;; returns:  (values headers bodylines envelope-sender)))
 (defun scan-message-headers (stream maxbodylines)
   (let ((firstline t)
