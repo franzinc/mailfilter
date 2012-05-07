@@ -5,6 +5,9 @@
   ;; macro is active.
   (require :regexp2) 
   
+  (require :smtp) 
+  (require :acldns) 
+  
   (defparameter *file-list* '("version" "lex" "emailaddr" "parse" "spool"
 			      "subs" "command-line-options"))
   
