@@ -1,4 +1,3 @@
-;; $Id: mailstatus.cl,v 1.17 2009/02/22 22:47:32 elliott Exp $
 
 (in-package :user)
 
@@ -13,6 +12,7 @@
 
   (let* ((user (getenv "USER"))
 	 (home (getenv "HOME"))
+	 (*mail-status* t)
 	 (spoolfile (guess-spool-filename user))
 	 (dotlock t)
 	 (prgname (pop args))

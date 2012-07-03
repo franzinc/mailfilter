@@ -10,7 +10,8 @@
   (use-package :net.post-office))
 
 ;; variables that may be redefined by the user
-(defparameter *incorporating-mail* nil)
+(defparameter *incorporating-mail* nil)	; running from incfilter
+(defparameter *mail-status* nil)	; running from mailstatus
 (defparameter *body-lines-to-read* 0)
 (defparameter *track-dispatches* nil)
 (defparameter *http-timeout* 15)
