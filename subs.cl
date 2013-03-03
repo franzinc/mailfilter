@@ -19,7 +19,6 @@
 (defparameter *inbox-regexp* "^inbox-(.*)") 
 ;; used by mailstatus
 (defparameter *mailstatus-inbox-folder-order* nil)
-(defparameter *mailstatus-long-format* nil)
 ;; used by incfilter.   
 (defparameter *logfilename* "~/incfilter.log") 
 ;; Debugging option.  If set, it should be a string representing the 
@@ -71,8 +70,8 @@
 	      (setf (msginfo-headers minfo)
 		(nconc (msginfo-headers minfo) 
 		       (list (cons name value))))))
-       (declare (ignorable #'from-one-of #'to-one-of #'to-one-of-domain
-			   #'add-header))
+       (declare (ignorable #'from-one-of #'to-one-of #'cc-one-of
+			   #'to-one-of-domain #'add-header))
        ;; putting these into a macrolet allows the the regexps to be
        ;; compiled at the time the .mailfilter.cl is compiled.
        (macrolet

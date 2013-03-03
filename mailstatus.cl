@@ -141,17 +141,27 @@
 	
 	       ;; inbox ==> (shortname longname fullname)
 	       (dolist (inbox (make-list-of-inboxes))
-		 (multiple-value-bind (old new unread)
-		     (get-other-inbox-information inbox boxes
-						  configuration-changed)
-		   (when (> (+ old new unread) 0)
-		     (if* long
-			then (print-long-summary output (second inbox)
-						 print-separators
-						 new unread old)
-			else (print-short-summary output (first inbox)
-						  show-unread new unread
-						  old)))))
+		 (cond
+		  ((symbolp inbox)
+		   (if* (eq :newline inbox)
+		      then (format output "~%")
+		      else (error "bad inbox: ~s." inbox)))
+		  ((and (consp inbox) (symbolp (car inbox)))
+		   (if* (eq :header (first inbox))
+		      then (format output "; ~a~%" (second inbox))
+		      else (error "bad inbox: ~s." inbox)))
+		  (t
+		   (multiple-value-bind (old new unread)
+		       (get-other-inbox-information inbox boxes
+						    configuration-changed)
+		     (when (> (+ old new unread) 0)
+		       (if* long
+			  then (print-long-summary output (second inbox)
+						   print-separators
+						   new unread old)
+			  else (print-short-summary output (first inbox)
+						    show-unread new unread
+						    old)))))))
 
 	       (let ((string (get-output-stream-string output)))
 		 (when (string= "" string)
@@ -244,16 +254,21 @@
 (defun sort-inboxes (inboxes)
   (let (sorted entry sort-order)
     (setq sort-order (if* *long*
-			then (or *mailstatus-long-format*
-				 *mailstatus-inbox-folder-order*)
+			then *mailstatus-inbox-folder-order*
 			else *mailstatus-inbox-folder-order*))
     (setq inboxes (sort inboxes #'string< :key #'first))
     (dolist (inbox sort-order)
-      (when (setf entry (find inbox inboxes :key #'first :test #'string=))
-	(push entry sorted)
-	(setf inboxes 
-	  (delete inbox inboxes :key #'first :test #'string=))))
-    (nconc (nreverse sorted) inboxes)))
+      (if* (or (eq :newline inbox)
+	       (consp inbox))
+	 then (push inbox sorted)
+	 else (when (setf entry
+		      (find inbox inboxes :key #'first :test #'string=))
+		(push entry sorted)
+		(setf inboxes 
+		  (delete inbox inboxes :key #'first :test #'string=)))))
+    (nconc (nreverse sorted)
+	   ;; Everything not in `sorted':
+	   inboxes)))
 
 (defun output-time (stream)
   (multiple-value-bind (sec min hour)
