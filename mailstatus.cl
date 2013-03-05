@@ -1,8 +1,6 @@
 
 (in-package :user)
 
-(defvar *long* nil)
-
 (defun main (&rest args)
   (setq *load-print* nil)
   (setq *load-verbose* nil)
@@ -63,7 +61,6 @@
 		    "enable long output (implies -o)"
 		    (lambda ()
 		      (setf long t)
-		      (setf *long* t)
 		      (call-command-line-option-action "-o")))
 
     (register-c-l-o "-u"
@@ -143,13 +140,15 @@
 	       (dolist (inbox (make-list-of-inboxes))
 		 (cond
 		  ((symbolp inbox)
-		   (if* (eq :newline inbox)
-		      then (format output "~%")
-		      else (error "bad inbox: ~s." inbox)))
+		   (when long
+		     (if* (eq :newline inbox)
+			then (format output "~%")
+			else (error "bad inbox: ~s." inbox))))
 		  ((and (consp inbox) (symbolp (car inbox)))
-		   (if* (eq :header (first inbox))
-		      then (format output "; ~a~%" (second inbox))
-		      else (error "bad inbox: ~s." inbox)))
+		   (when long
+		     (if* (eq :header (first inbox))
+			then (format output "; ~a~%" (second inbox))
+			else (error "bad inbox: ~s." inbox))))
 		  (t
 		   (multiple-value-bind (old new unread)
 		       (get-other-inbox-information inbox boxes
@@ -253,9 +252,7 @@
 
 (defun sort-inboxes (inboxes)
   (let (sorted entry sort-order)
-    (setq sort-order (if* *long*
-			then *mailstatus-inbox-folder-order*
-			else *mailstatus-inbox-folder-order*))
+    (setq sort-order *mailstatus-inbox-folder-order*)
     (setq inboxes (sort inboxes #'string< :key #'first))
     (dolist (inbox sort-order)
       (if* (or (eq :newline inbox)
