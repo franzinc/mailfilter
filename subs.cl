@@ -27,6 +27,8 @@
 ;; If true, log more information into *logfilename* during normal
 ;; operation.
 (defparameter *verbose-logging* nil)
+;; Requires support on the emacs side, a layer on top of MH-E
+(defparameter *conversations-file* "~/.mailfilter.d/conversations.el")
 
 (defstruct msginfo
   num
@@ -509,3 +511,62 @@
 	  basename
 	  (locale-format-time
 	   nil (get-universal-time) nil nil nil "%Y-%m-%d-%H:%M:%S")))
+
+(defun subject-sans-re (subject)
+  (multiple-value-bind (match whole rest)
+      (match-re "^re: ?(.*)" subject :case-fold t)
+    (declare (ignore whole))
+    (if* match
+       then rest
+       else subject)))
+
+(defun extract-bhid-from-subject (subject)
+  (multiple-value-bind (match whole ignore1 bhid)
+      (match-re "^(re: ?)?\\[((sa|spr|rfe|bug|www)[0-9]+)\\]" subject
+		:case-fold t)
+    (declare (ignore whole ignore1))
+    (when match bhid)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; support for moving conversations
+
+(defvar *conversations-by-subject* nil)
+(defvar *conversations-by-bhid* nil)
+
+(defun message-in-conversation-p (subject bhid)
+  ;; For now, we just initialize two has tables from the data in the
+  ;; *conversations-file*: keys are subject and bhid and values are
+  ;; destination folder.
+  (when (null *conversations-by-subject*)
+    (read-conversations *conversations-file*))
+  
+  (if* (gethash (subject-sans-re subject)
+		*conversations-by-subject*)
+     thenret
+   elseif (gethash bhid *conversations-by-bhid*)
+     thenret))
+
+(defun read-conversations (file)
+  (setq *conversations-by-subject*
+    (make-hash-table :size 101 :test #'equalp))
+  (setq *conversations-by-bhid*
+    (make-hash-table :size 101 :test #'equal))
+  
+  (when (not (probe-file file))
+    (return-from read-conversations nil))
+  
+  (with-open-file (s file)
+    (let ((form nil)
+	  (conversations '()))
+      (loop
+	(setq form (read s nil s))
+	(when (eq form s) (return conversations))
+	(destructuring-bind (&key folder subjects bh-ids message-ids)
+	    form
+	  (declare (ignore message-ids))
+	  (dolist (subject subjects)
+	    (setf (gethash subject *conversations-by-subject*)
+	      folder))
+	  (dolist (bh-id bh-ids)
+	    (setf (gethash bh-id *conversations-by-bhid*)
+	      folder)))))))
