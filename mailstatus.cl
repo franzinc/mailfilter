@@ -122,7 +122,7 @@
 	       ;; +folder ==> (old new modification-time)
 	       ;; (old is not used for +inbox)
 
-	       (get-main-inbox-information spoolfile user boxes dotlock
+	       (get-main-inbox-information long spoolfile user boxes dotlock
 					   configuration-changed)
 	
 	       (let* ((info (gethash "+inbox" boxes))
@@ -279,7 +279,7 @@
 
 ;; Gets the new count for other inboxes as a side effect
 
-(defun get-main-inbox-information (spoolfile user boxes dotlock
+(defun get-main-inbox-information (long spoolfile user boxes dotlock
 				   ignore-cache)
   (when ignore-cache (clrhash boxes))
   
@@ -289,24 +289,28 @@
     (when (eq f :no-spool)
       (zero-box "+inbox" boxes)
       (reset-new-count-for-boxes boxes))
-    
-    (when (and (streamp f) 
-	       (or ignore-cache
-		   (> (file-write-date f)
-		      (third (gethash "+inbox" boxes)))))
-      (reset-new-count-for-boxes boxes)
+
+    (let ((new-incoming
+	   (and (streamp f) 
+		 (or ignore-cache
+		     (> (file-write-date f)
+			(third (gethash "+inbox" boxes)))))))
       
-      (setf (first (gethash "+inbox" boxes))
+      (when (or long new-incoming)
+	(setf (first (gethash "+inbox" boxes))
 	  (count-if (lambda (p)
 		      (match-re "/[0-9]+$" (enough-namestring p)))
-		    (directory "inbox/")))
+		    (directory "inbox/"))))
+    
+      (when new-incoming
+	(reset-new-count-for-boxes boxes)
       
-      (setf (third (gethash "+inbox" boxes)) (file-write-date f))
+	(setf (third (gethash "+inbox" boxes)) (file-write-date f))
       
-      (with-each-message (f box minfo user)
-	(ensure-box box boxes)
-	(incf (second (gethash box boxes)))
-	(skip-message f)))))
+	(with-each-message (f box minfo user)
+	  (ensure-box box boxes)
+	  (incf (second (gethash box boxes)))
+	  (skip-message f))))))
 	
 
 ;; returns oldcount and newcount.
