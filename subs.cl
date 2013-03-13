@@ -521,11 +521,12 @@
        else subject)))
 
 (defun extract-bhid-from-subject (subject)
-  (multiple-value-bind (match whole ignore1 bhid)
-      (match-re "^(re: ?)?\\[((sa|spr|rfe|bug|www)[0-9]+)\\]" subject
-		:case-fold t)
-    (declare (ignore whole ignore1))
-    (when match bhid)))
+  (when subject
+    (multiple-value-bind (match whole ignore1 bhid)
+	(match-re "^(re: ?)?\\[((sa|spr|rfe|bug|www)[0-9]+)\\]" subject
+		  :case-fold t)
+      (declare (ignore whole ignore1))
+      (when match bhid))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; support for moving conversations
