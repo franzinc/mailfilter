@@ -112,8 +112,8 @@ rpm:    tarball
 	rm $(tarball)
 
 REMOVE_PREVIOUS_VERSIONS ?= no
-REPOHOST                 ?= fs1
-REPOBASE                 ?= /storage1/franz/common
+REPOHOST                 ?= cobweb
+REPOBASE                 ?= /www/sites/yum
 
 REPODIR=$(REPOBASE)/$(ARCH)
 
