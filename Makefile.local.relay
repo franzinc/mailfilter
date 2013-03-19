@@ -1,9 +1,0 @@
-
-lisp = /usr/local/acl82b.64/mlisp
-
-installdir = $(RPM_BUILD_ROOT)/usr/local
-
-REPOHOST = $(shell hostname)
-REPOBASE = /backup/rpms
-
-REMOVE_PREVIOUS_VERSIONS = no
