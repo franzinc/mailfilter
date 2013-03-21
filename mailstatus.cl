@@ -160,14 +160,14 @@
 			then (format output "; ~a~%" (second inbox))
 			else (error "bad inbox: ~s." inbox))))
 		  (t
-		   (multiple-value-bind (old new unread)
+		   (multiple-value-bind (old new unread important)
 		       (get-other-inbox-information inbox boxes
 						    configuration-changed)
 		     (when (> (+ old new unread) 0)
 		       (if* long
 			  then (print-long-summary output (second inbox)
 						   print-separators
-						   new unread old)
+						   new unread old important)
 			  else (print-short-summary output (first inbox)
 						    show-unread new unread
 						    old)))))))
@@ -220,8 +220,9 @@
 	 (format s " ~A:~D~@[[~a]~]" name old
 		 (when (and show-unread (> unread 0)) unread)))))
 
-(defun print-long-summary (s name print-separators new unread old)
-  (format s "+~15a~@[~c~]~10a~@[~c~]~13a~@[~c~]~10a~%"
+(defun print-long-summary (s name print-separators new unread old 
+			   &optional important)
+  (format s "+~15a~@[~c~]~10a~@[~c~]~13a~@[~c~]~10a~a~%"
 	  name
 	  print-separators
 	  (if (> new 0) (format nil "~3d new" new) "")
@@ -230,7 +231,8 @@
 	      (format nil "~4d unread" unread)
 	    "")
 	  print-separators
-	  (if (> old 0) (format nil "~4d old" old) "")))
+	  (if (> old 0) (format nil "~4d old" old) "")
+	  (if important "*****" "")))
 
 (defun ensure-box (box boxes)
   (if (null (gethash box boxes))
@@ -326,7 +328,7 @@
 ;; returns oldcount and newcount.
 (defun get-other-inbox-information (inbox boxes ignore-cache)
   (when ignore-cache (clrhash boxes))
-  (let (dir old new unread)
+  (let (dir old new unread important)
     (destructuring-bind (shortname longname fullname) inbox
       (declare (ignore shortname))
       
@@ -350,14 +352,21 @@
       (setq unread
 	(count-unread-messages (merge-pathnames ".mh_sequences" dir)))
       
+      (setq important
+	(important-sequence-exists-p (merge-pathnames ".mh_sequences" dir)))
+      
       (setf old (first (gethash fullname boxes))))
-    (values old new unread)))
+    (values old new unread important)))
 
 (defun count-unread-messages (mh-seq &aux (unread 0))
-  (dolist (unseen (retrieve-unseen-sequence mh-seq) unread)
+  (dolist (unseen (retrieve-sequence "unseen" mh-seq) unread)
     (incf unread (count-range unseen))))
 
-(defun retrieve-unseen-sequence (file)
+(defun important-sequence-exists-p (mh-seq)
+  (when (retrieve-sequence "important" mh-seq)
+    t))
+
+(defun retrieve-sequence (name file)
   (when (probe-file file)
     (with-open-file (s file :direction :input)
       (let (line)
@@ -365,7 +374,7 @@
 	  (setq line (read-line s nil s))
 	  (when (eq s line) (return))
 	  (multiple-value-bind (found ignore1 seq)
-	      (match-re "^unseen: (.*)$" line)
+	      (match-re (format nil "^~a: (.*)$" name) line)
 	    (declare (ignore ignore1))
 	    (when found
 	      (return (delimited-string-to-list seq #\space)))))))))
