@@ -29,6 +29,7 @@
 (defparameter *verbose-logging* nil)
 ;; Requires support on the emacs side, a layer on top of MH-E
 (defparameter *conversations-file* "~/.mailfilter.d/conversations.el")
+(defparameter *conversations-lock-file* "~/.mailfilter.d/conversations.el.lock")
 
 (defstruct msginfo
   num
@@ -533,6 +534,7 @@
 
 (defvar *conversations-by-subject* nil)
 (defvar *conversations-by-bhid* nil)
+(defvar *conversations-by-folder* nil)
 
 (defun message-in-conversation-p (subject bhid)
   ;; For now, we just initialize two has tables from the data in the
@@ -547,11 +549,16 @@
    elseif (gethash bhid *conversations-by-bhid*)
      thenret))
 
-(defun read-conversations (file)
+(defun read-conversations (file &key by-folder)
+  ;; If BY-FOLDER is non-nil, then also put the conversations into a hash
+  ;; table *conversations-by-folder*
   (setq *conversations-by-subject*
     (make-hash-table :size 101 :test #'equalp))
   (setq *conversations-by-bhid*
     (make-hash-table :size 101 :test #'equal))
+  (when by-folder
+    (setq *conversations-by-folder*
+      (make-hash-table :size 101 :test #'equal)))
   
   (when (not (probe-file file))
     (return-from read-conversations nil))
@@ -570,4 +577,125 @@
 	      folder))
 	  (dolist (bh-id bh-ids)
 	    (setf (gethash bh-id *conversations-by-bhid*)
-	      folder)))))))
+	      folder))
+	  
+	  (when by-folder
+	    (push form ;; entire form saved
+		  (gethash folder *conversations-by-folder*))))))))
+
+(defun remove-old-conversations (&aux data-loss-danger ok)
+  (unwind-protect
+      (let ((n 3))
+	;; wait a few seconds for the lock file, then abort
+	(while (and (probe-file *conversations-lock-file*)
+		    (> n 0))
+	  (sleep 1)
+	  (decf n))
+	(when (probe-file *conversations-lock-file*)
+	  (error "Could not get lock file: ~a." *conversations-lock-file*))
+	;; This will fail if someone grabbed the lock in the mean time
+	(with-open-file (s *conversations-lock-file* :direction :output)
+	  (copy-live-conversations *conversations-file* s))
+	(setq data-loss-danger t)
+	(excl.osi:unlink *conversations-file*)
+	(excl.osi:rename *conversations-lock-file* *conversations-file*)
+	(setq ok t))
+    (when (not ok)
+      (if* data-loss-danger
+	 then ;; print something the user will see that tells them there
+	      ;; might be the chance of data loss
+	      (format excl::*stderr* "~
+WARNING: your conversations data file is at risk, since an error
+         happened while renaming the lock file to the new file.
+         The files in questions are ~a and ~a and you should make
+         sure the situation is cleaned up before proceeding.~%"
+		      *conversations-lock-file* *conversations-file*)
+	      (force-output excl::*stderr*)
+	 else ;; filesystem filled up writing the new file??  Assume the user
+	      ;; has seen that.
+	      (delete-file *conversations-lock-file*)))))
+
+(defun copy-live-conversations (from-file to-stream)
+
+  ;;1. gather conversations according to folder into hash table, C (keys
+  ;;   are folders, values are lists of conversations)
+  (read-conversations from-file :by-folder t)
+  
+  ;;2. iterate over the messages in each of the folders in C looking
+  ;;   for conversations that exist.  When a message matches, save it in a
+  ;;   new hash table, C', taking care to update the message-id list in
+  ;;   each conversation for each message that matches.
+  (let ((new
+	 ;; This is a new version of *conversations-by-subject*, which we
+	 ;; will use in step #3.
+	 (make-hash-table :size 101 :test #'equal))
+	(folders
+	 ;; Gather the list of folders first, since we don't want to be
+	 ;; modifying the hash table while we are iterating over it.  Maybe
+	 ;; this would be OK, since we'd only be modifying the values??
+	 ;; Anyway, no biggie to avoid it.
+	 (let ((res '()))
+	   (maphash (lambda (folder conversation-data)
+		      (declare (ignore conversation-data))
+		      (push folder res))
+		    *conversations-by-folder*)
+	   res)))
+    (dolist (folder folders)
+      ;; We could read and parse all the messages in FOLDER, but that would
+      ;; be pretty expensive.  Best to use scan to extract the information
+      ;; we want and do it that way.
+      (flet ((clean (string)
+	       (if* (= 0 (length string))
+		  then nil
+		  else string)))
+	(do* ((output
+	       ;; A list of items a multiple of 4 long, with
+	       ;;  msg subject bh-id message-id ....
+	       ;; repeated N times (for N messages in folder)
+	       (excl.osi:command-output
+		(format nil "scan -width 10000 -format '~?' ~a all"
+			"%(msg)~%%{subject}~%%{bh-id}~%%{message-id}~%"
+			nil ;; consumed by ~?
+			folder))
+	       (cddddr output))
+	      msg
+	      subject
+	      bh-id
+	      message-id)
+	    ((null output))
+	  (setf msg (first output)
+		subject (clean (second output))
+		bh-id (clean (third output))
+		message-id (fourth output))
+	  (when (not (and msg message-id))
+	    (error "Malformed 'inc' output: ~s." output))
+
+	  (let ((subj (subject-sans-re subject)))
+	    (when (gethash subj *conversations-by-subject*)
+	      (let ((c (gethash subj new)))
+		(if* c
+		   then ;; update c -- this is easy but destructive way to do
+			;; it
+			(destructuring-bind (&key folder subjects bh-ids
+						  message-ids)
+			    c
+			  (pushnew subj subjects :test #'equalp)
+			  (when bh-id (pushnew bh-id bh-ids :test #'string=))
+			  (pushnew message-id message-ids :test #'string=)
+			  (setf (gethash subj new)
+			    `(:folder ,folder
+				      :subjects ,subjects
+				      :bh-ids ,bh-ids
+				      :message-ids ,message-ids)))
+		   else (setf (gethash subj new)
+			  `(:folder ,folder
+				    :subjects (,subj)
+				    ,@(when bh-id `(:bh-ids (,bh-id)))
+				    :message-ids (,message-id))))))))))
+    
+    ;;3. write new conversations file with remaining values from C
+    (maphash
+     (lambda (ignore conversation)
+       (declare (ignore ignore))
+       (pprint conversation to-stream))
+     new)))

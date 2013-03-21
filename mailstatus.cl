@@ -17,7 +17,8 @@
 	 (interval 30) ;; seconds
 	 (boxes (make-hash-table :test #'equal))
 	 (usage (format nil "usage: ~A [options]" prgname))
-	 show-time once debug long show-unread print-separators)
+	 show-time once debug long show-unread print-separators
+	 cleanup-conversations)
     (if (null user)
 	(error "Environment variable USER is not set"))
     (if (null home)
@@ -62,7 +63,12 @@
 		    (lambda ()
 		      (setf long t)
 		      (call-command-line-option-action "-o")))
-
+    
+    (register-c-l-o "-cleanup"
+		    "clean out old conversations"
+		    (lambda ()
+		      (setq cleanup-conversations t)))        
+    
     (register-c-l-o "-u"
 		    "enable showing of unread mail."
 		    (lambda ()
@@ -114,6 +120,10 @@
 
     (labels
 	((doit (&aux configuration-changed)
+	   (when cleanup-conversations
+	     (remove-old-conversations)
+	     (return-from doit))
+	   
 	   (loop ;; interval loop
 	     (with-output-to-string (output)
 	       (when show-time (output-time output))
