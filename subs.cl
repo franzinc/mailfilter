@@ -218,7 +218,10 @@
 	
 	(values headers 
 		bodylines
-		froms
+		;; There might not be a 'From ' on the first line
+		;; (in the case of folderfilter, perhaps) so 
+		;; also look for a 'From: ' header.
+		(or froms (get-header-recips headers "From"))
 		(get-header-recips headers "To")
 		(get-header-recips headers "Cc")
 		(append (get-header-recips headers "Resent-To")
