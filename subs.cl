@@ -673,28 +673,29 @@ WARNING: your conversations data file is at risk, since an error
 	  (when (not (and msg message-id))
 	    (error "Malformed 'inc' output: ~s." output))
 
-	  (let ((subj (subject-sans-re subject)))
-	    (when (gethash subj *conversations-by-subject*)
-	      (let ((c (gethash subj new)))
-		(if* c
-		   then ;; update c -- this is easy but destructive way to do
-			;; it
-			(destructuring-bind (&key folder subjects bh-ids
-						  message-ids)
-			    c
-			  (pushnew subj subjects :test #'equalp)
-			  (when bh-id (pushnew bh-id bh-ids :test #'string=))
-			  (pushnew message-id message-ids :test #'string=)
-			  (setf (gethash subj new)
+	  (when subject
+	    (let ((subj (subject-sans-re subject)))
+	      (when (gethash subj *conversations-by-subject*)
+		(let ((c (gethash subj new)))
+		  (if* c
+		     then ;; update c -- this is easy but destructive way to do
+			  ;; it
+			  (destructuring-bind (&key folder subjects bh-ids
+						    message-ids)
+			      c
+			    (pushnew subj subjects :test #'equalp)
+			    (when bh-id (pushnew bh-id bh-ids :test #'string=))
+			    (pushnew message-id message-ids :test #'string=)
+			    (setf (gethash subj new)
+			      `(:folder ,folder
+					:subjects ,subjects
+					:bh-ids ,bh-ids
+					:message-ids ,message-ids)))
+		     else (setf (gethash subj new)
 			    `(:folder ,folder
-				      :subjects ,subjects
-				      :bh-ids ,bh-ids
-				      :message-ids ,message-ids)))
-		   else (setf (gethash subj new)
-			  `(:folder ,folder
-				    :subjects (,subj)
-				    ,@(when bh-id `(:bh-ids (,bh-id)))
-				    :message-ids (,message-id))))))))))
+				      :subjects (,subj)
+				      ,@(when bh-id `(:bh-ids (,bh-id)))
+				      :message-ids (,message-id)))))))))))
     
     ;;3. write new conversations file with remaining values from C
     (maphash
