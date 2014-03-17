@@ -64,6 +64,20 @@
 		      (setf long t)
 		      (call-command-line-option-action "-o")))
     
+    (register-c-l-o "-L"
+		    "enable scanning long output (implies -o)"
+		    (lambda (&aux temp)
+		      (when (null args)
+			(error "mailstatus: missing argument to -L"))
+		      (setf long (pop args))
+		      (if* (string= "all" long)
+			 then (setq long 999)
+		       elseif (null (setq temp
+				      (parse-integer long :junk-allowed nil)))
+			 then (error "Couldn't parse -L number: ~a." long)
+			 else (setq long temp))
+		      (call-command-line-option-action "-o")))
+    
     (register-c-l-o "-cleanup"
 		    "clean out old conversations"
 		    (lambda ()
@@ -142,7 +156,8 @@
 		 (if* long
 		    then (print-long-summary output "inbox"
 					     print-separators
-					     ninbox uinbox oinbox)
+					     ninbox uinbox oinbox
+					     :scan (if (numberp long) long))
 		  elseif (> ninbox 0)
 		    then (format output " ~D+" ninbox)))
 	
@@ -167,7 +182,10 @@
 		       (if* long
 			  then (print-long-summary output (second inbox)
 						   print-separators
-						   new unread old important)
+						   new unread old
+						   :important important
+						   :scan (if (numberp long)
+							     long))
 			  else (print-short-summary output (first inbox)
 						    show-unread new unread
 						    old)))))))
@@ -221,18 +239,34 @@
 		 (when (and show-unread (> unread 0)) unread)))))
 
 (defun print-long-summary (s name print-separators new unread old 
-			   &optional important)
-  (format s "+~15a~@[~c~]~10a~@[~c~]~13a~@[~c~]~10a~a~%"
-	  name
-	  print-separators
-	  (if (> new 0) (format nil "~3d new" new) "")
-	  print-separators
-	  (if (> unread 0)
-	      (format nil "~4d unread" unread)
-	    "")
-	  print-separators
-	  (if (> old 0) (format nil "~4d old" old) "")
-	  (if important "*****" "")))
+			   &key important scan)
+  (if* scan
+     then (multiple-value-bind (stdout stderr code)
+	      (excl.osi:command-output
+	       (format nil "scan +~a~@[~* -reverse~] -width 132 last:~a"
+		       name
+		       (/= scan 999)
+		       scan)
+	       :whole t)
+	    (format s "~%+~a~%" name)
+	    (if* (and (/= 0 code)
+		      (match-re "scan: no messages in " stderr :return nil))
+	       thenret ;; skip
+	     elseif stdout
+	       then (princ stdout s)
+	       else (error "stdout=~s stderr=~s code=~s" stdout stderr
+			   code)))
+     else (format s "+~15a~@[~c~]~10a~@[~c~]~13a~@[~c~]~10a~a~%"
+		  name
+		  print-separators
+		  (if (> new 0) (format nil "~3d new" new) "")
+		  print-separators
+		  (if (> unread 0)
+		      (format nil "~4d unread" unread)
+		    "")
+		  print-separators
+		  (if (> old 0) (format nil "~4d old" old) "")
+		  (if important "*****" ""))))
 
 (defun ensure-box (box boxes)
   (if (null (gethash box boxes))
