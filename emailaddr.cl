@@ -90,11 +90,32 @@
 
 (defparameter *wsp* '(:or #\tab #\space))
 
+
+#|
+
+4.2. Obsolete folding white space
+
+In the obsolete syntax, any amount of folding white space MAY be
+inserted where the obs-FWS rule is allowed.  This creates the
+possibility of having two consecutive "folds" in a line, and
+therefore the possibility that a line which makes up a folded header
+field could be composed entirely of white space.
+
+   obs-FWS         =       1*WSP *(CRLF 1*WSP)
+
+|#
+
 (defparameter *obs-fws* '((:one-or-more *wsp*)
 			  (:zero-or-more 
 			   (#\newline (:one-or-more *wsp*)))))
 
-(defparameter *fws* *obs-fws*)
+;; FWS             =       ([*WSP CRLF] 1*WSP) / obs-FWS
+
+(defparameter *fws-modern* '((:optional ((:zero-or-more *wsp*) #\newline))
+			     (:one-or-more *wsp*)))
+
+
+(defparameter *fws* '(:or *fws-modern* *obs-fws*))
 
 (defun no-ws-ctl-p (char)
   (let ((code (char-code char)))
@@ -125,6 +146,8 @@
 			  (:optional *fws*)
 			  #\)))
 
+
+
 ;; Not the definition from RFC2822.  It didn't work well
 ;; with my lexer.
 (defparameter *cfws* '(:one-or-more (:or *fws* *comment*)))
@@ -145,6 +168,7 @@
 				(:zero-or-more 
 				 (#\. (:one-or-more 
 				       (:char-predicate atext-char-p))))))
+
 
 (defun qtextp (char)
   (let ((code (char-code char)))
@@ -257,6 +281,7 @@
 	(error "strip-comments got more than one non-comment result"))
     (values (nreverse comments) (first res))))
 
+;; word            =       atom / quoted-string
 ;; Returns a list of the tokens that make up a word.  This could
 ;; include comments before and after.  Whitespace is stripped if desired.
 ;; Also return the remaining tokens
@@ -290,6 +315,8 @@
   (dolist (token tokens)
     (print-token token stream)))
 
+;; phrase          =       1*word / obs-phrase
+;; obs-phrase      =       word *(word / "." / CFWS)
 ;; Return the tokens that make up a phrase.
 ;;   plus the remaining tokens
 (defun parse-phrase (tokens)
@@ -512,7 +539,9 @@
   (if (nameaddr-displayname token)
       (print-phrase (nameaddr-displayname token) stream))
   (print-angle-addr (nameaddr-angleaddr token) stream))
-  
+
+;; name-addr       =       [display-name] angle-addr
+;; display-name    =       phrase
 (defun parse-nameaddr (tokens)
   (block nil
     (multiple-value-bind (phrase newtokens)
@@ -608,7 +637,7 @@
 (defun print-address (token &optional (stream t))
   (print-token (second token) stream))
 
-;; mailbox/group
+;; address         =       mailbox / group
 ;; we check for group first.. it works out better
 (defun parse-address (tokens)
   (block nil
