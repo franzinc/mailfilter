@@ -1,5 +1,7 @@
 (in-package :user)
 
+(eval-when (compile eval load) (require :regexp))
+
 (defstruct emailaddr
   user
   domain

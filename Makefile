@@ -42,15 +42,15 @@ endif
 
 mailstatus/mailstatus: $(libfiles) mailstatus.cl
 	rm -fr mailstatus/
-	$(LISP) -L load.cl -e '(build "mailstatus")' -kill
+	$(LISP) -batch -L load.cl -e '(build "mailstatus")' -kill
 
 incfilter/incfilter: $(libfiles) incfilter.cl
 	rm -fr incfilter/
-	$(LISP) -L load.cl -e '(build "incfilter")' -kill
+	$(LISP) -batch -L load.cl -e '(build "incfilter")' -kill
 
 folderfilter/folderfilter: $(libfiles) folderfilter.cl
 	rm -fr folderfilter/
-	$(LISP) -L load.cl -e '(build "folderfilter")' -kill
+	$(LISP) -batch -L load.cl -e '(build "folderfilter")' -kill
 
 install: all
 	mkdir -p $(installdir)
