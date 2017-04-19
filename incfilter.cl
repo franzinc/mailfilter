@@ -131,10 +131,8 @@
 		   (with-each-message (f folder minfo user)
 		     (when (or debug verbose)
 		       (format t "~D " (msginfo-num minfo))
-		       (let ((s (get-header "Subject"
-					    (msginfo-headers minfo))))
-			 (if s
-			     (format t "(~A) " s)))
+		       (let ((s (msginfo-subject minfo)))
+			 (when s (format t "(~A) " s)))
 		       (format t "--> ~A~%" folder))
 	      
 		     (let ((tmpfile (concatenate 'string tmpdir "/" folder)))

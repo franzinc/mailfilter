@@ -306,7 +306,7 @@
 
 (defun collect-bh-id (headers)
   (block nil
-    (let ((subj (get-header "Subject" headers))
+    (let ((subj (get-decoded-subject headers))
 	  (id (get-header "Bh-Id" headers)))
       (when id
 	;; Always trust the Bh-Id
@@ -314,7 +314,7 @@
       (when subj
 	;; Only trust a few types of things in the subject
 	(multiple-value-bind (found whole id)
-	    (match-re "\\b((?:spr|bug|rfe|bhrfe|bhbug)\\d+)\\b" subj)
+	    (match-re "\\b((?:sa|spr|bug|rfe|www)\\d+)\\b" subj)
 	  (declare (ignore whole))
 	  (if found
 	      id))))))
@@ -412,14 +412,7 @@
 		   :cc ,cc
 		   :recips (append ,to ,cc ,resent-tos)
 		   :froms ,froms
-		   :subject (let ((sub (get-header "Subject" ,headers)))
-			      (when sub
-				(let ((decoded-sub
-				       (ignore-errors
-					(decode-header-text sub))))
-				  (if* decoded-sub
-				     thenret
-				     else sub))))
+		   :subject (get-decoded-subject ,headers)
 		   :bhid (collect-bh-id ,headers)
 		   :class (get-header "Class" ,headers))))
 	     
@@ -460,6 +453,14 @@
 			(funcall 'classify-message ,minfovar)
 		      "+inbox")))
 	       ,@body)))))))
+
+(defun get-decoded-subject (headers)
+  (let ((sub (get-header "Subject" headers)))
+    (when sub
+      (let ((decoded-sub (ignore-errors (decode-header-text sub))))
+	(if* decoded-sub
+	   thenret
+	   else sub)))))
 
 (defmacro with-single-message ((spoolstream classificationvar minfovar user
 				&key msgnum)

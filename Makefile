@@ -1,5 +1,5 @@
 
-at_franz = $(shell if test -d /fi/cl/8.2/acl; then echo t; else echo nil; fi)
+at_franz = $(shell if test -d /fi/cl/10.1/acl; then echo t; else echo nil; fi)
 
 Makefile_local = \
 	$(shell if test -f Makefile.local; then echo Makefile.local; fi)
@@ -11,7 +11,7 @@ endif
 ARCH ?= $(shell uname -i)
 
 ifeq ($(at_franz),t)
-LISPROOT ?= /fi/cl/8.2
+LISPROOT ?= /fi/cl/10.1
 LISP ?= $(LISPROOT)/bin/$(shell if [ $(ARCH) = x86_64 ]; then echo mlisp-64; else echo mlisp; fi)
 else
 endif
