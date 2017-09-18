@@ -309,9 +309,10 @@
 		(push entry sorted)
 		(setf inboxes 
 		  (delete inbox inboxes :key #'first :test #'string=)))))
-    (nconc (nreverse sorted)
-	   ;; Everything not in `sorted':
-	   inboxes)))
+    (nconc
+     ;; put the unsorted ones first, so new additions aren't easily missed!
+     inboxes ;; Everything not in `sorted'
+     (nreverse sorted))))
 
 (defun output-time (stream)
   (multiple-value-bind (sec min hour)
