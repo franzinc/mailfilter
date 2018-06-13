@@ -256,7 +256,7 @@
 	       then (princ stdout s)
 	       else (error "stdout=~s stderr=~s code=~s" stdout stderr
 			   code)))
-     else (format s "+~15a~@[~c~]~10a~@[~c~]~13a~@[~c~]~10a~a~%"
+     else (format s "+~30a~@[~c~]~10a~@[~c~]~13a~@[~c~]~10a~a~%"
 		  name
 		  print-separators
 		  (if (> new 0) (format nil "~3d new" new) "")
