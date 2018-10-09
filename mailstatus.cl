@@ -133,7 +133,7 @@
     (setf *default-pathname-defaults* (pathname (chdir (get-mhpath home))))
 
     (labels
-	((doit (&aux configuration-changed)
+	((doit (&aux configuration-changed (total 0))
 	   (when cleanup-conversations
 	     (remove-old-conversations)
 	     (return-from doit))
@@ -154,7 +154,8 @@
 		      (ninbox (second info))
 		      (uinbox (count-unread-messages "inbox/.mh_sequences")))
 		 (if* long
-		    then (print-long-summary output "inbox"
+		    then (incf total (+ ninbox uinbox oinbox))
+			 (print-long-summary output "inbox"
 					     print-separators
 					     ninbox uinbox oinbox
 					     :scan (if (numberp long) long))
@@ -180,7 +181,8 @@
 						    configuration-changed)
 		     (when (> (+ old new unread) 0)
 		       (if* long
-			  then (print-long-summary output (second inbox)
+			  then (incf total (+ old new unread))
+			       (print-long-summary output (second inbox)
 						   print-separators
 						   new unread old
 						   :important important
@@ -189,6 +191,9 @@
 			  else (print-short-summary output (first inbox)
 						    show-unread new unread
 						    old)))))))
+	       
+	       (when (and long (> total 0))
+		 (format output "~%; TOTAL: ~s~%" total))
 
 	       (let ((string (get-output-stream-string output)))
 		 (when (string= "" string)
