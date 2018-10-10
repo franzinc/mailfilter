@@ -154,7 +154,7 @@
 		      (ninbox (second info))
 		      (uinbox (count-unread-messages "inbox/.mh_sequences")))
 		 (if* long
-		    then (incf total (+ ninbox uinbox oinbox))
+		    then (incf total (+ ninbox oinbox))
 			 (print-long-summary output "inbox"
 					     print-separators
 					     ninbox uinbox oinbox
@@ -181,7 +181,7 @@
 						    configuration-changed)
 		     (when (> (+ old new unread) 0)
 		       (if* long
-			  then (incf total (+ old new unread))
+			  then (incf total (+ old new))
 			       (print-long-summary output (second inbox)
 						   print-separators
 						   new unread old
