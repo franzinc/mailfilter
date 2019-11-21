@@ -121,11 +121,11 @@
 
     (while args
       (call-command-line-option-action (pop args)
-				       (lambda (a)
-					 (display-help usage)
-					 (error "~A: Unexpected command line argument: ~A" 
-						prgname
-						a))))
+	(lambda (a)
+	  (display-help usage)
+	  (error "~A: Unexpected command line argument: ~A" 
+		 prgname
+		 a))))
 
     (load-user-config home)
     
@@ -133,7 +133,8 @@
     (setf *default-pathname-defaults* (pathname (chdir (get-mhpath home))))
 
     (labels
-	((doit (&aux configuration-changed (total 0))
+	((doit (&aux configuration-changed (total 0)
+		     inboxes saw-unknown-marker)
 	   (when cleanup-conversations
 	     (remove-old-conversations)
 	     (return-from doit))
@@ -163,7 +164,10 @@
 		    then (format output " ~D+" ninbox)))
 	
 	       ;; inbox ==> (shortname longname fullname)
-	       (dolist (inbox (make-list-of-inboxes))
+	       (multiple-value-setq (inboxes saw-unknown-marker)
+		 (make-list-of-inboxes))
+	       
+	       (dolist (inbox inboxes)
 		 (cond
 		  ((symbolp inbox)
 		   (when long
@@ -172,7 +176,9 @@
 			else (error "bad inbox: ~s." inbox))))
 		  ((and (consp inbox) (symbolp (car inbox)))
 		   (when long
-		     (if* (eq :header (first inbox))
+		     (if* (or (eq :header (first inbox))
+			      (and (eq :header-if-unknown (first inbox))
+				   saw-unknown-marker))
 			then (format output "; ~a~%" (second inbox))
 			else (error "bad inbox: ~s." inbox))))
 		  (t
@@ -286,9 +292,14 @@
 	       (setf (second value) 0))
 	   boxes))
 
-;; make a list of
-;;  (shortname longname fullname) lists
 (defun make-list-of-inboxes ()
+  ;; make a list of these items, one for each inbox
+  ;;  (shortname longname mh-e-name)
+  ;; where shortname is name without "inbox-"
+  ;;   and longname  is the given name
+  ;;   and mh-e-name is the logname prefixed with "+"
+  ;; and return that list sorted by the specification in
+  ;; *mailstatus-inbox-folder-order*.
   (let (inboxes)
     (dolist (path (directory "."))
       (let ((longname (enough-namestring path)))
@@ -296,28 +307,71 @@
 	    (match-re *inbox-regexp* longname)
 	  (declare (ignore whole))
 	  (when found
-	    (push (list shortname longname 
+	    (push (list shortname longname
 			(concatenate 'string "+" longname))
 		  inboxes)))))
-    (sort-inboxes inboxes)))
+    (if* *mailstatus-inbox-folder-order*
+       then (sort-inboxes inboxes)
+       else ;; user doesn't care, use directory order
+	    inboxes)))
 
 (defun sort-inboxes (inboxes)
-  (let (sorted entry sort-order)
-    (setq sort-order *mailstatus-inbox-folder-order*)
-    (setq inboxes (sort inboxes #'string< :key #'first))
-    (dolist (inbox sort-order)
-      (if* (or (eq :newline inbox)
-	       (consp inbox))
-	 then (push inbox sorted)
-	 else (when (setf entry
-		      (find inbox inboxes :key #'first :test #'string=))
-		(push entry sorted)
-		(setf inboxes 
-		  (delete inbox inboxes :key #'first :test #'string=)))))
-    (nconc
-     ;; put the unsorted ones first, so new additions aren't easily missed!
-     inboxes ;; Everything not in `sorted'
-     (nreverse sorted))))
+  ;; return a sorted list.  The 2nd value is non-nil if the :unknown marker
+  ;; was seen.
+  (let ((unknown-placeholder-seen
+	 ;; non-nil if :unknown seen in *mailstatus-inbox-folder-order*
+	 nil)
+	(before-unknown-inboxes
+	 ;; the inboxes seen before :unknown
+	 '())
+	(after-unknown-inboxes
+	 ;; the inboxes seen after :unknown
+	 '())
+	this)
+
+    (dolist (template *mailstatus-inbox-folder-order*)
+      (if* (eq :unknown template)
+	 then (setq unknown-placeholder-seen t)
+	      (setq this nil)
+       elseif (consp template)
+	 then (setq this template)
+       elseif (or (eq :newline template)
+		  (consp template))
+	 then (setq this template)
+       elseif (setq this (find template inboxes :key #'first :test #'string=))
+	 then (setq inboxes
+		;; remove this one from inboxes so at the end it's just the
+		;; unknown ones.
+		(delete template inboxes :key #'first :test #'string=))
+	 else (setq this nil))
+      (when this
+	(if* unknown-placeholder-seen
+	   then (push this after-unknown-inboxes)
+	   else (push this before-unknown-inboxes))))
+    
+    (when inboxes
+      (setq inboxes (sort inboxes #'string< :key #'first)))
+
+    (if* before-unknown-inboxes
+       then (setq before-unknown-inboxes (nreverse before-unknown-inboxes))
+    
+	    (if* after-unknown-inboxes
+	       then (setq after-unknown-inboxes
+		      (nreverse after-unknown-inboxes))
+		    
+		    (values (nconc before-unknown-inboxes
+				   inboxes
+				   after-unknown-inboxes)
+			    ;; indicate there was an :unknown marker seen
+			    t)
+	     elseif inboxes
+	       then ;; No :unknown marker, so put the unknown ones at the
+		    ;; top, like before :unknown existed.
+		    (nconc inboxes before-unknown-inboxes)
+	       else before-unknown-inboxes)
+     elseif inboxes
+       then inboxes)))
+
 
 (defun output-time (stream)
   (multiple-value-bind (sec min hour)
@@ -429,3 +483,8 @@
 	 then (setq end (parse-integer end))
 	      (1+ (- end start))
 	 else 1))))
+
+;;; For Gnu Emacs.
+;;; Local Variables: ***
+;;; eval: (put 'call-command-line-option-action 'fi:common-lisp-indent-hook 1) ***
+;;; End: ***
