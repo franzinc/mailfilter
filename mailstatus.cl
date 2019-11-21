@@ -133,8 +133,7 @@
     (setf *default-pathname-defaults* (pathname (chdir (get-mhpath home))))
 
     (labels
-	((doit (&aux configuration-changed (total 0)
-		     inboxes saw-unknown-marker)
+	((doit (&aux configuration-changed (total 0))
 	   (when cleanup-conversations
 	     (remove-old-conversations)
 	     (return-from doit))
@@ -164,10 +163,7 @@
 		    then (format output " ~D+" ninbox)))
 	
 	       ;; inbox ==> (shortname longname fullname)
-	       (multiple-value-setq (inboxes saw-unknown-marker)
-		 (make-list-of-inboxes))
-	       
-	       (dolist (inbox inboxes)
+	       (dolist (inbox (make-list-of-inboxes))
 		 (cond
 		  ((symbolp inbox)
 		   (when long
@@ -176,9 +172,7 @@
 			else (error "bad inbox: ~s." inbox))))
 		  ((and (consp inbox) (symbolp (car inbox)))
 		   (when long
-		     (if* (or (eq :header (first inbox))
-			      (and (eq :header-if-unknown (first inbox))
-				   saw-unknown-marker))
+		     (if* (eq :header (first inbox))
 			then (format output "; ~a~%" (second inbox))
 			else (error "bad inbox: ~s." inbox))))
 		  (t
@@ -316,8 +310,7 @@
 	    inboxes)))
 
 (defun sort-inboxes (inboxes)
-  ;; return a sorted list.  The 2nd value is non-nil if the :unknown marker
-  ;; was seen.
+  ;; return a sorted list.
   (let ((unknown-placeholder-seen
 	 ;; non-nil if :unknown seen in *mailstatus-inbox-folder-order*
 	 nil)
@@ -359,11 +352,9 @@
 	       then (setq after-unknown-inboxes
 		      (nreverse after-unknown-inboxes))
 		    
-		    (values (nconc before-unknown-inboxes
-				   inboxes
-				   after-unknown-inboxes)
-			    ;; indicate there was an :unknown marker seen
-			    t)
+		    (nconc before-unknown-inboxes
+			   inboxes
+			   after-unknown-inboxes)
 	     elseif inboxes
 	       then ;; No :unknown marker, so put the unknown ones at the
 		    ;; top, like before :unknown existed.
