@@ -143,8 +143,7 @@
 			 (copy-message-to-stream f out (msginfo-headers minfo) 
 						 :save-pos nil)))
 	      
-		     (when *verbose-logging*
-		       (logentry logfile minfo folder)))
+		     (logentry logfile minfo folder))
 	    
 		   ;; Outside of with-each message.
 	  

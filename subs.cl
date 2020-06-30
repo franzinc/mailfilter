@@ -20,7 +20,7 @@
 ;; used by mailstatus
 (defparameter *mailstatus-inbox-folder-order* nil)
 ;; used by incfilter.   
-(defparameter *logfilename* "~/incfilter.log") 
+(defparameter *logfilename* "/dev/null") 
 ;; Debugging option.  If set, it should be a string representing the 
 ;; path to an existing directory where files will be saved
 (defparameter *save-spools* nil)
