@@ -1,4 +1,3 @@
-;; $Id: incfilter.cl,v 1.21 2009/02/22 22:47:32 elliott Exp $
 
 (in-package :user)
 
@@ -144,7 +143,8 @@
 			 (copy-message-to-stream f out (msginfo-headers minfo) 
 						 :save-pos nil)))
 	      
-		     (logentry logfile minfo folder))
+		     (when *verbose-logging*
+		       (logentry logfile minfo folder)))
 	    
 		   ;; Outside of with-each message.
 	  
