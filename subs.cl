@@ -129,14 +129,14 @@
 (defun skip-message (stream)
   (copy-message-to-stream stream nil nil :save-pos nil))
 
-(defmacro get-header (header headers &key null-string)
+(defmacro get-header (header headers &key (null-string nil null-string-given))
   (let ((res (gensym)))
     `(let ((,res (cdr (assoc ,header ,headers :test #'equalp))))
        (if ,res
 	   ,res
-	 (if ,null-string
-	     ""
-	   nil)))))
+	 ,@(if* null-string-given
+	      then `((when ,null-string ""))
+	      else nil)))))
 
 (defun get-headers (header headers &aux (res '()))
   (dolist (h headers)
