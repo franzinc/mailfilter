@@ -124,4 +124,11 @@ endif
 	scp RPMS/$(ARCH)/$(name)-$(version)-*.rpm root@$(REPOHOST):$(REPODIR)
 	ssh root@$(REPOHOST) "cd $(REPODIR) && createrepo -s sha --update -q ."
 
+dist: FORCE
+	if test -z "$(DISTDIR)"; then \
+	    echo DISTDIR is not defined; \
+	    exit 1; \
+	fi
+	cp -p RPMS/$(ARCH)/$(name)-$(version)-*.rpm $(DISTDIR)
+
 FORCE:
